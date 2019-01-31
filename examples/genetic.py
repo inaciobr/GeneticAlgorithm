@@ -25,7 +25,6 @@ def minimize():
                      mutationMethod = opt.geneticAlgorithm.geneMutation,
                      geneMutationRate = 0.01,
                      chromosomeMutationRate = 0.2)
-
     duration += time.time()
 
     #print("{:3d}, {:7.4f}, {:5.3f}".format(nArgs, duration, func(minArgs)))
