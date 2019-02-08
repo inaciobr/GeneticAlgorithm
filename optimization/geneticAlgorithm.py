@@ -41,8 +41,8 @@ class geneticAlgorithm:
 
     # Tournament selection.
     def tournamentSelect(self):
-        tournament = np.random.randint(0, self.populationSize, (self.crossoverNum << 1, self.tournamentSize))
-        winners = tournament[np.arange(self.crossoverNum << 1), tournament.argmin(axis = 1)]
+        tournament = np.random.randint(0, self.populationSize, (2*self.crossoverNum, self.tournamentSize))
+        winners = tournament[np.arange(2*self.crossoverNum), tournament.argmin(axis = 1)]
         return winners.reshape(self.crossoverNum, 2)
 
 
@@ -74,14 +74,14 @@ class geneticAlgorithm:
     # Creates a boolean mask.
     def booleanMask(self, size):
         num = np.prod(size)
-        numBytes = -(-num >> 3)
+        numBytes = -(-num // 8)
         seqBytes = np.frombuffer(np.random.bytes(numBytes), np.uint8)
         return np.unpackbits(seqBytes)[:num].reshape(size)
 
 
     # Makes the crossover between couples of the same population.
     def crossover(self, couples):
-        truth = self.booleanMask((couples.size >> 1, self.geneSize))
+        truth = self.booleanMask((couples.size // 2, self.geneSize))
         newPopulation = np.where(truth, self.population[couples[:, 0]], self.population[couples[:, 1]])
         return self.mutation(self, newPopulation)
 

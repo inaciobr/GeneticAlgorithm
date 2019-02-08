@@ -31,7 +31,11 @@ It's possible to run an example using the following command:
 
     python -m Optimization.examples.genetic
 
-Note: The parameters should be adjusted to every specific problem, but the configuration shown in the example can be a good starting point.
+*Note*: The parameters should be adjusted to every specific problem, but the configuration shown in the example can be a good starting point.
 Some parameters like the _mutation rates_ and the _tournamentSize_ have an optimal value where the algorithm will be able to find a better solution and the value can be adjusted to maximize the efficience of the algorithm to the problem. *Changing these values won't considerably change the speed of the algorithm*.
 On the other hand, parameters like _maxIteractions_ and _populationSize_ have a big impact on the speed of the algorithm *AND* on the quality of the solution, so they have to be configurated in a way that the program can provide a solution good enough in the time required. The combination of the two arguments mentioned also depends on the problem, but in general, more iterations provide a better solution than bigger populations, so, by default, the population is limited to 200 individuals.
+
+### 1.1 Selection Methods
+
+### 1.2 Mutation Methods
 
