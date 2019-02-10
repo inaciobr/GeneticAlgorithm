@@ -3,10 +3,12 @@ Genetic Algorithm used to minimize a positive function.
 """
 
 import numpy as np
+import math
 
 class geneticAlgorithm:
     def __init__(self, function, nArgs, lowerBound, upperBound, maxIteractions, populationSize, threshold, eliteNum,
-                 selectionMethod, mutationMethod, chromosomeMutationRate = 0.2, geneMutationRate = 0.01, tournamentSize = 5):
+                 selectionMethod, mutationMethod, crossoverMethod,
+                 chromosomeMutationRate = 0.2, geneMutationRate = 0.01, tournamentSize = 5):
 
         # Function to be optimized.
         self.function = function
@@ -22,6 +24,7 @@ class geneticAlgorithm:
         self.crossoverNum = self.populationSize - self.eliteNum
 
         # Crossover parameters.
+        self.crossover = crossoverMethod
         self.selectCouples = selectionMethod
         self.mutation = mutationMethod
         self.chromosomeMutationRate = chromosomeMutationRate
@@ -42,8 +45,8 @@ class geneticAlgorithm:
     # Tournament selection.
     def tournamentSelect(self):
         tournament = np.random.randint(0, self.populationSize, (2*self.crossoverNum, self.tournamentSize))
-        winners = tournament[np.arange(2*self.crossoverNum), tournament.argmin(axis = 1)]
-        return winners.reshape(self.crossoverNum, 2)
+        winners = np.min(tournament, axis = 1).reshape(self.crossoverNum, 2)
+        return winners
 
 
     """
@@ -52,7 +55,7 @@ class geneticAlgorithm:
     # This function has a chance of choosing each chromosome.
     # The chromosome chosen will have a random gene changed to a random value.
     def chromosomeMutation(self, population):
-        elements = np.arange(self.crossoverNum)[np.random.rand(self.crossoverNum) <= self.chromosomeMutationRate]
+        elements = np.arange(self.crossoverNum)[np.random.rand(self.crossoverNum) < self.chromosomeMutationRate]
         positions = np.random.randint(0, self.geneSize, elements.size)
         population[elements, positions] = np.random.uniform(self.lowerBound[positions], self.upperBound[positions], elements.size)
         return population
@@ -61,9 +64,9 @@ class geneticAlgorithm:
     # This function has a chance of choosing each gene.
     # Every gene chosen will be changed to a random value.
     def geneMutation(self, population):
-        mutation = np.random.rand(self.crossoverNum, self.geneSize) <= self.geneMutationRate
-        population[mutation] = np.random.uniform(self.lowerBound.reshape(1, -1).repeat(self.crossoverNum, 0)[mutation],
-                                                 self.upperBound.reshape(1, -1).repeat(self.crossoverNum, 0)[mutation],
+        mutation = np.random.rand(self.crossoverNum, self.geneSize) < self.geneMutationRate
+        population[mutation] = np.random.uniform(self.lowerBound[None, :].repeat(self.crossoverNum, 0)[mutation],
+                                                 self.upperBound[None, :].repeat(self.crossoverNum, 0)[mutation],
                                                  np.count_nonzero(mutation))
         return population
 
@@ -79,11 +82,20 @@ class geneticAlgorithm:
         return np.unpackbits(seqBytes)[:num].reshape(size)
 
 
-    # Makes the crossover between couples of the same population.
-    def crossover(self, couples):
+    # Makes the crossover between two chromosomes randomly choosing the source of each gene.
+    def crossoverUniform(self, couples):
         truth = self.booleanMask((couples.size // 2, self.geneSize))
         newPopulation = np.where(truth, self.population[couples[:, 0]], self.population[couples[:, 1]])
-        return self.mutation(self, newPopulation)
+        return newPopulation
+
+
+    # Makes the crossover between two chromosomes using genes from one parent before a random point and
+    # from the other parent after that point.
+    def crossoverSinglePoint(self, couples):
+        grid = np.arange(self.geneSize)[None, :].repeat(couples.size // 2, 0)
+        truth = grid < np.random.randint(0, self.geneSize + 1, couples.size // 2)[None, :].T
+        newPopulation = np.where(truth, self.population[couples[:, 0]], self.population[couples[:, 1]])
+        return newPopulation
 
 
     """
@@ -102,7 +114,7 @@ class geneticAlgorithm:
 
 
     def nextGeneration(self):
-        offspring = self.crossover(self.selectCouples(self))
+        offspring = self.mutation(self, self.crossover(self, self.selectCouples(self)))
         self.population[self.eliteNum:] = offspring
         self.fitValues[self.eliteNum:] = self.function(offspring.T)
         self.sortPopulation()

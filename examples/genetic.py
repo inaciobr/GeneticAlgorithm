@@ -23,6 +23,7 @@ def minimize():
                      tournamentSize = 0.05,
 
                      mutationMethod = opt.geneticAlgorithm.geneMutation,
+					 crossoverMethod = opt.geneticAlgorithm.crossoverUniform,
                      geneMutationRate = 0.01,
                      chromosomeMutationRate = 0.2)
     duration += time.time()

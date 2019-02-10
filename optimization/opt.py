@@ -10,7 +10,7 @@ import numpy as np
 # Runs the Genetic Algorithms.
 def GA(function, nArgs, lowerBound, upperBound, maxIteractions = 0, populationSize = 0, threshold = np.NINF,
         elitePercent = 0.05, tournamentSize = 0.1, chromosomeMutationRate = 0.2, geneMutationRate = 0.01,
-        selectionMethod = None, mutationMethod = None):
+        selectionMethod = None, mutationMethod = None, crossoverMethod = None):
 
     GA = geneticAlgorithm(function = function,
                           nArgs = nArgs,
@@ -24,5 +24,6 @@ def GA(function, nArgs, lowerBound, upperBound, maxIteractions = 0, populationSi
                           geneMutationRate = geneMutationRate,
                           tournamentSize = max(2, math.ceil(populationSize * tournamentSize)),
                           selectionMethod = selectionMethod if selectionMethod is not None else geneticAlgorithm.tournamentSelect,
-                          mutationMethod = mutationMethod if mutationMethod is not None else geneticAlgorithm.geneMutation)
+                          mutationMethod = mutationMethod if mutationMethod is not None else geneticAlgorithm.geneMutation,
+						  crossoverMethod = crossoverMethod if crossoverMethod is not None else geneticAlgorithm.crossoverUniform)
     return GA.run()
