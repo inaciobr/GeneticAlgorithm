@@ -4,6 +4,7 @@ Genetic Algorithm used to minimize a positive function.
 
 import numpy as np
 import math
+import random
 
 class geneticAlgorithm:
     def __init__(self, function, nArgs, lowerBound, upperBound, maxIteractions, populationSize, threshold, eliteNum,
@@ -49,6 +50,15 @@ class geneticAlgorithm:
         return winners
 
 
+    # Stochastic selection
+    def stochasticSelect(self):
+        fit = self.fitValues[-1] - self.fitValues
+        distance = np.add.reduce(fit) / (2*self.crossoverNum)
+        selected =  distance * (np.arange(2*self.crossoverNum) + random.random())
+        parents = self.populationSize - np.add.reduce(selected[:, None] < np.cumsum(fit), axis = 1)
+        return parents.reshape(self.crossoverNum, 2)
+
+
     """
     Methods of mutation (one of them must be chosen).
     """
@@ -83,7 +93,7 @@ class geneticAlgorithm:
 
 
     # Makes the crossover between two chromosomes randomly choosing the source of each gene.
-    def crossoverUniform(self, couples):
+    def uniformCrossover(self, couples):
         truth = self.booleanMask((couples.size // 2, self.geneSize))
         newPopulation = np.where(truth, self.population[couples[:, 0]], self.population[couples[:, 1]])
         return newPopulation
@@ -91,11 +101,27 @@ class geneticAlgorithm:
 
     # Makes the crossover between two chromosomes using genes from one parent before a random point and
     # from the other parent after that point.
-    def crossoverSinglePoint(self, couples):
+    def singlePointCrossover(self, couples):
         grid = np.arange(self.geneSize)[None, :].repeat(couples.size // 2, 0)
         truth = grid < np.random.randint(0, self.geneSize + 1, couples.size // 2)[None, :].T
         newPopulation = np.where(truth, self.population[couples[:, 0]], self.population[couples[:, 1]])
         return newPopulation
+
+
+    # Makes the crossover between two chromosomes using genes from one parent between two random points and
+    # from the other parent outside the interval defined by the points.
+    def twoPointCrossover(self, couples):
+        grid = np.arange(self.geneSize)[None, :].repeat(couples.size // 2, 0)
+        rand = np.sort(np.random.randint(0, self.geneSize + 1, (couples.size // 2, 2)))[None, :].T
+        rand[0] -= 1
+        truth = (grid >= rand[0]) & (grid < rand[1])
+        newPopulation = np.where(truth, self.population[couples[:, 0]], self.population[couples[:, 1]])
+        return newPopulation
+
+
+    # Don't make any crossover.
+    def noCrossover(self, couples):
+        return self.population[couples[:, 0]]
 
 
     """
@@ -134,3 +160,24 @@ class geneticAlgorithm:
 
         # Returns the best chromosome on the population, since it's ordered.
         return self.population[0]
+
+
+def GA(function, nArgs, lowerBound, upperBound, maxIteractions = 0, populationSize = 0, threshold = np.NINF,
+        elitePercent = 0.05, tournamentSize = 0.1, chromosomeMutationRate = 0.2, geneMutationRate = 0.01,
+        selectionMethod = None, mutationMethod = None, crossoverMethod = None):
+
+    GA = geneticAlgorithm(function = function,
+                          nArgs = nArgs,
+                          lowerBound = lowerBound,
+                          upperBound = upperBound,
+                          maxIteractions = 100 * nArgs if maxIteractions == 0 else maxIteractions,
+                          populationSize = min(20 * nArgs, 200) if populationSize == 0 else populationSize,
+                          threshold = threshold,
+                          eliteNum = math.ceil(populationSize * elitePercent),
+                          chromosomeMutationRate = chromosomeMutationRate,
+                          geneMutationRate = geneMutationRate,
+                          tournamentSize = max(2, math.ceil(populationSize * tournamentSize)),
+                          selectionMethod = selectionMethod if selectionMethod is not None else geneticAlgorithm.tournamentSelect,
+                          mutationMethod = mutationMethod if mutationMethod is not None else geneticAlgorithm.geneMutation,
+                          crossoverMethod = crossoverMethod if crossoverMethod is not None else geneticAlgorithm.crossoverUniform)
+    return GA.run()

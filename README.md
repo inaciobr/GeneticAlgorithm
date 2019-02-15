@@ -39,3 +39,5 @@ On the other hand, parameters like _maxIteractions_ and _populationSize_ have a 
 
 ### 1.2 Mutation Methods
 
+### 1.3 Crossover Methods
+
