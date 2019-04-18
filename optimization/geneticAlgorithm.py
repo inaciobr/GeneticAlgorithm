@@ -25,9 +25,9 @@ class GeneticAlgorithm:
         self.threshold = threshold
 
         # Methods of GeneticAlgorithm.
-        self.selectCouples = selectionMethod if selectionMethod is not None else GeneticAlgorithm.tournamentSelect
-        self.mutation = mutationMethod if mutationMethod is not None else GeneticAlgorithm.geneMutation
-        self.crossover = crossoverMethod if crossoverMethod is not None else GeneticAlgorithm.singlePointCrossover
+        self.selectCouples = selectionMethod if selectionMethod else GeneticAlgorithm.tournamentSelect
+        self.mutation = mutationMethod if mutationMethod else GeneticAlgorithm.geneMutation
+        self.crossover = crossoverMethod if crossoverMethod else GeneticAlgorithm.singlePointCrossover
 
         # Parameters of methods.
         self.crossoverNum = self.populationSize - self.eliteNum

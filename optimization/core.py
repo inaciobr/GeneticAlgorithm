@@ -21,8 +21,8 @@ def GA(minFunction, inputSize, lowerBound, upperBound, maxIteractions = 0, popul
                           lowerBound = lowerBound,
                           upperBound = upperBound,
 
-                          maxIteractions = 100*inputSize if maxIteractions == 0 else maxIteractions,
-                          populationSize = min(200, 20*inputSize) if populationSize == 0 else populationSize,
+                          maxIteractions = maxIteractions if maxIteractions else 100*inputSize,
+                          populationSize = populationSize if populationSize else min(200, 20*inputSize),
                           eliteNum = math.ceil(populationSize * elitePercentage),
                           threshold = threshold,
 

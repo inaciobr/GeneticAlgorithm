@@ -11,7 +11,7 @@ import numpy as np
 
 def minimize():
     nVars = 50      # Number of variables in the problem.
-    func = testFunctions.ackley   # Function to be optimized
+    func = testFunctions.ackley     # Function to be optimized.
 
     duration = -time.time()
     minArgs = opt.GA(minFunction = func,
@@ -26,7 +26,7 @@ def minimize():
 
                      selectionMethod = opt.GeneticAlgorithm.tournamentSelect,
                      mutationMethod = opt.GeneticAlgorithm.geneMutation,
-					 crossoverMethod = opt.GeneticAlgorithm.uniformCrossover,
+                     crossoverMethod = opt.GeneticAlgorithm.uniformCrossover,
                      
                      chromosomeMutationRate = 0.2,
                      geneMutationRate = 0.01,
