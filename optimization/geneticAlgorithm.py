@@ -1,33 +1,36 @@
 """
-Genetic Algorithm used to minimize a positive function.
+Genetic Algorithm used to minimize positive functions.
 """
 
 import numpy as np
 import math
 import random
 
-class geneticAlgorithm:
-    def __init__(self, function, nArgs, lowerBound, upperBound, maxIteractions, populationSize, threshold, eliteNum,
-                 selectionMethod, mutationMethod, crossoverMethod,
+class GeneticAlgorithm:
+    def __init__(self, minFunction, inputSize, lowerBound, upperBound,
+                 maxIteractions, populationSize, eliteNum,
+                 threshold = np.NINF, selectionMethod = None, mutationMethod = None, crossoverMethod = None,
                  chromosomeMutationRate = 0.2, geneMutationRate = 0.01, tournamentSize = 5):
 
         # Function to be optimized.
-        self.function = function
-        self.geneSize = nArgs
+        self.geneSize = inputSize
+        self.minFunction = minFunction
         self.lowerBound = lowerBound
         self.upperBound = upperBound
 
-        # Genetic Algorithm's parameters.
+        # Parameters of GeneticAlgorithm.
         self.maxIteractions = maxIteractions
         self.populationSize = populationSize
-        self.threshold = threshold
         self.eliteNum = eliteNum
-        self.crossoverNum = self.populationSize - self.eliteNum
+        self.threshold = threshold
 
-        # Crossover parameters.
-        self.crossover = crossoverMethod
-        self.selectCouples = selectionMethod
-        self.mutation = mutationMethod
+        # Methods of GeneticAlgorithm.
+        self.selectCouples = selectionMethod if selectionMethod is not None else GeneticAlgorithm.tournamentSelect
+        self.mutation = mutationMethod if mutationMethod is not None else GeneticAlgorithm.geneMutation
+        self.crossover = crossoverMethod if crossoverMethod is not None else GeneticAlgorithm.singlePointCrossover
+
+        # Parameters of methods.
+        self.crossoverNum = self.populationSize - self.eliteNum
         self.chromosomeMutationRate = chromosomeMutationRate
         self.geneMutationRate = geneMutationRate
         self.tournamentSize = tournamentSize
@@ -40,23 +43,23 @@ class geneticAlgorithm:
     def wheelSelect(self):
         roulette = self.fitValues[-1] - self.fitValues
         roulette /= np.add.reduce(roulette)
-        return np.random.choice(self.populationSize, size = (self.crossoverNum, 2), p = roulette)
+        return np.random.choice(self.populationSize, size = (2, self.crossoverNum), p = roulette)
 
 
     # Tournament selection.
     def tournamentSelect(self):
-        tournament = np.random.randint(0, self.populationSize, (2*self.crossoverNum, self.tournamentSize))
-        winners = np.min(tournament, axis = 1).reshape(self.crossoverNum, 2)
-        return winners
+        tournament = np.random.randint(0, self.populationSize, (self.tournamentSize, 2*self.crossoverNum))
+        winners = np.min(tournament, axis = 0)
+        return winners.reshape(2, self.crossoverNum)
 
 
     # Stochastic selection
     def stochasticSelect(self):
         fit = self.fitValues[-1] - self.fitValues
-        distance = np.add.reduce(fit) / (2*self.crossoverNum)
-        selected =  distance * (np.arange(2*self.crossoverNum) + random.random())
-        parents = self.populationSize - np.add.reduce(selected[:, None] < np.cumsum(fit), axis = 1)
-        return parents.reshape(self.crossoverNum, 2)
+        cumsum = np.cumsum(fit)
+        distance = cumsum[-1] / (2*self.crossoverNum)
+        parents = np.searchsorted(cumsum, np.arange(distance * random.random(), cumsum[-1], distance))
+        return parents.reshape(2, self.crossoverNum)
 
 
     """
@@ -65,7 +68,7 @@ class geneticAlgorithm:
     # This function has a chance of choosing each chromosome.
     # The chromosome chosen will have a random gene changed to a random value.
     def chromosomeMutation(self, population):
-        elements = np.arange(self.crossoverNum)[np.random.rand(self.crossoverNum) < self.chromosomeMutationRate]
+        elements = np.nonzero(np.random.rand(self.crossoverNum) < self.chromosomeMutationRate)[0]
         positions = np.random.randint(0, self.geneSize, elements.size)
         population[elements, positions] = np.random.uniform(self.lowerBound[positions], self.upperBound[positions], elements.size)
         return population
@@ -74,7 +77,7 @@ class geneticAlgorithm:
     # This function has a chance of choosing each gene.
     # Every gene chosen will be changed to a random value.
     def geneMutation(self, population):
-        mutation = np.random.rand(self.crossoverNum, self.geneSize) < self.geneMutationRate
+        mutation = np.random.rand(*population.shape) < self.geneMutationRate
         population[mutation] = np.random.uniform(self.lowerBound[None, :].repeat(self.crossoverNum, 0)[mutation],
                                                  self.upperBound[None, :].repeat(self.crossoverNum, 0)[mutation],
                                                  np.count_nonzero(mutation))
@@ -85,47 +88,46 @@ class geneticAlgorithm:
     Methods linked to the crossover.
     """
     # Creates a boolean mask.
-    def booleanMask(self, size):
-        num = np.prod(size)
+    def booleanMask(self, height, width):
+        num = height * width
         numBytes = -(-num // 8)
         seqBytes = np.frombuffer(np.random.bytes(numBytes), np.uint8)
-        return np.unpackbits(seqBytes)[:num].reshape(size)
+        return np.unpackbits(seqBytes)[:num].reshape(height, width)
 
 
     # Makes the crossover between two chromosomes randomly choosing the source of each gene.
     def uniformCrossover(self, couples):
-        truth = self.booleanMask((couples.size // 2, self.geneSize))
-        newPopulation = np.where(truth, self.population[couples[:, 0]], self.population[couples[:, 1]])
+        truth = self.booleanMask(couples.size // 2, self.geneSize)
+        newPopulation = np.where(truth, self.population[couples[0]], self.population[couples[1]])
         return newPopulation
 
 
     # Makes the crossover between two chromosomes using genes from one parent before a random point and
     # from the other parent after that point.
     def singlePointCrossover(self, couples):
-        grid = np.arange(self.geneSize)[None, :].repeat(couples.size // 2, 0)
-        truth = grid < np.random.randint(0, self.geneSize + 1, couples.size // 2)[None, :].T
-        newPopulation = np.where(truth, self.population[couples[:, 0]], self.population[couples[:, 1]])
+        truth = np.arange(self.geneSize) < np.random.randint(0, self.geneSize + 1, couples.size // 2)[:, None]
+        newPopulation = np.where(truth, self.population[couples[0]], self.population[couples[1]])
         return newPopulation
 
 
     # Makes the crossover between two chromosomes using genes from one parent between two random points and
     # from the other parent outside the interval defined by the points.
     def twoPointCrossover(self, couples):
-        grid = np.arange(self.geneSize)[None, :].repeat(couples.size // 2, 0)
-        rand = np.sort(np.random.randint(0, self.geneSize + 1, (couples.size // 2, 2)))[None, :].T
+        grid = np.arange(self.geneSize)
+        rand = np.sort(np.random.randint(0, self.geneSize + 1, (2, couples.size // 2, 1)))
         rand[0] -= 1
         truth = (grid >= rand[0]) & (grid < rand[1])
-        newPopulation = np.where(truth, self.population[couples[:, 0]], self.population[couples[:, 1]])
+        newPopulation = np.where(truth, self.population[couples[0]], self.population[couples[1]])
         return newPopulation
 
 
     # Don't make any crossover.
     def noCrossover(self, couples):
-        return self.population[couples[:, 0]]
+        return self.population[couples[0]]
 
 
     """
-    Methods linked to the population and the generations.
+    Methods related to the population and the generations.
     """
     def sortPopulation(self):
         argSort = self.fitValues.argsort()
@@ -135,14 +137,14 @@ class geneticAlgorithm:
 
     def firstPopulation(self):
         self.population = np.random.uniform(self.lowerBound, self.upperBound, (self.populationSize, self.geneSize))
-        self.fitValues = self.function(self.population.T)
+        self.fitValues = self.minFunction(self.population.T)
         self.sortPopulation()
 
 
     def nextGeneration(self):
         offspring = self.mutation(self, self.crossover(self, self.selectCouples(self)))
         self.population[self.eliteNum:] = offspring
-        self.fitValues[self.eliteNum:] = self.function(offspring.T)
+        self.fitValues[self.eliteNum:] = self.minFunction(offspring.T)
         self.sortPopulation()
 
    
@@ -158,26 +160,5 @@ class geneticAlgorithm:
 
             self.nextGeneration()
 
-        # Returns the best chromosome on the population, since it's ordered.
+        # Returns the chromosome with best fit on the population, since it's ordered.
         return self.population[0]
-
-
-def GA(function, nArgs, lowerBound, upperBound, maxIteractions = 0, populationSize = 0, threshold = np.NINF,
-        elitePercent = 0.05, tournamentSize = 0.1, chromosomeMutationRate = 0.2, geneMutationRate = 0.01,
-        selectionMethod = None, mutationMethod = None, crossoverMethod = None):
-
-    GA = geneticAlgorithm(function = function,
-                          nArgs = nArgs,
-                          lowerBound = lowerBound,
-                          upperBound = upperBound,
-                          maxIteractions = 100 * nArgs if maxIteractions == 0 else maxIteractions,
-                          populationSize = min(20 * nArgs, 200) if populationSize == 0 else populationSize,
-                          threshold = threshold,
-                          eliteNum = math.ceil(populationSize * elitePercent),
-                          chromosomeMutationRate = chromosomeMutationRate,
-                          geneMutationRate = geneMutationRate,
-                          tournamentSize = max(2, math.ceil(populationSize * tournamentSize)),
-                          selectionMethod = selectionMethod if selectionMethod is not None else geneticAlgorithm.tournamentSelect,
-                          mutationMethod = mutationMethod if mutationMethod is not None else geneticAlgorithm.geneMutation,
-                          crossoverMethod = crossoverMethod if crossoverMethod is not None else geneticAlgorithm.crossoverUniform)
-    return GA.run()
