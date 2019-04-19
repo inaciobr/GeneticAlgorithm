@@ -10,7 +10,7 @@ import numpy as np
 
 
 def minimize():
-    nVars = 50      # Number of variables in the problem.
+    nVars = 50                      # Number of variables in the problem.
     func = testFunctions.ackley     # Function to be optimized.
 
     duration = -time.time()

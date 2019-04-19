@@ -55,8 +55,7 @@ class GeneticAlgorithm:
 
     # Stochastic selection
     def stochasticSelect(self):
-        fit = self.fitValues[-1] - self.fitValues
-        cumsum = np.cumsum(fit)
+        cumsum = np.cumsum(self.fitValues[-1] - self.fitValues)
         distance = cumsum[-1] / (2*self.crossoverNum)
         parents = np.searchsorted(cumsum, np.arange(distance * random.random(), cumsum[-1], distance))
         return parents.reshape(2, self.crossoverNum)
