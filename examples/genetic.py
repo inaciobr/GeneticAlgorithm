@@ -25,9 +25,9 @@ def minimize():
                      elitePercentage = 0.05,
                      threshold = np.NINF,
 
-                     selectionMethod = opt.GeneticAlgorithm.tournamentSelect,
+                     selectionMethod = opt.GeneticAlgorithm.stochasticSelect,
                      mutationMethod = opt.GeneticAlgorithm.geneMutation,
-                     crossoverMethod = opt.GeneticAlgorithm.uniformCrossover,
+                     crossoverMethod = opt.GeneticAlgorithm.singlePointCrossover,
                      
                      chromosomeMutationRate = 0.2,
                      geneMutationRate = 0.01,
@@ -43,5 +43,5 @@ def minimize():
 
 if __name__ == "__main__":
     print("===== Genetic Algorithm =====")
-    cProfile.run("minimize()")
-    #minimize()
+    #cProfile.run("minimize()")
+    minimize()
