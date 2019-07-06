@@ -16,14 +16,14 @@ def GA(minFunction, inputSize, lowerBound, upperBound, maxIteractions = 0, popul
        threshold = np.NINF, selectionMethod = None, mutationMethod = None, crossoverMethod = None,
        chromosomeMutationRate = 0.2, geneMutationRate = 0.01, tournamentPercentage = 0.1):
 
-    GA = GeneticAlgorithm(minFunction = minFunction,
-                          inputSize = inputSize,
+    GA = GeneticAlgorithm(fitnessFunction = minFunction,
+                          geneSize = inputSize,
                           lowerBound = lowerBound,
                           upperBound = upperBound,
 
                           maxIteractions = maxIteractions if maxIteractions else 100*inputSize,
                           populationSize = populationSize if populationSize else min(200, 20*inputSize),
-                          eliteNum = math.ceil(populationSize * elitePercentage),
+                          eliteSize = math.ceil(populationSize * elitePercentage),
                           threshold = threshold,
 
                           selectionMethod = selectionMethod,

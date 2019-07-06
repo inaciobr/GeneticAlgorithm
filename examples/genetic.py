@@ -7,11 +7,12 @@ import testFunctions
 
 import time
 import numpy as np
+import cProfile
 
 
 def minimize():
-    nVars = 50                      # Number of variables in the problem.
-    func = testFunctions.ackley     # Function to be optimized.
+    nVars = 100                      # Number of variables in the problem.
+    func = testFunctions.sphere     # Function to be optimized.
 
     duration = -time.time()
     minArgs = opt.GA(minFunction = func,
@@ -36,10 +37,11 @@ def minimize():
     #print("{:3d}, {:7.4f}, {:5.3f}".format(nVars, duration, func(minArgs)))
 
     print("Tempo de execução:", duration, "s.\n")
-    print(nVars, "argumentos que minimizam a função:\n", minArgs)
+    #print(nVars, "argumentos que minimizam a função:\n", minArgs)
     print("Valor da função neste ponto:", func(minArgs))
 
 
 if __name__ == "__main__":
     print("===== Genetic Algorithm =====")
-    minimize()
+    cProfile.run("minimize()")
+    #minimize()

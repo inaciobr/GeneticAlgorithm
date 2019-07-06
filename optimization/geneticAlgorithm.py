@@ -1,27 +1,26 @@
-"""
-Genetic Algorithm used to minimize positive functions.
-"""
-
 import numpy as np
 import math
 import random
 
+"""
+Genetic Algorithm used to minimize positive functions.
+"""
 class GeneticAlgorithm:
-    def __init__(self, minFunction, inputSize, lowerBound, upperBound,
-                 maxIteractions, populationSize, eliteNum,
+    def __init__(self, fitnessFunction, geneSize, lowerBound, upperBound,
+                 maxIteractions, populationSize, eliteSize,
                  threshold = np.NINF, selectionMethod = None, mutationMethod = None, crossoverMethod = None,
                  chromosomeMutationRate = 0.2, geneMutationRate = 0.01, tournamentSize = 5):
 
         # Function to be optimized.
-        self.geneSize = inputSize
-        self.minFunction = minFunction
+        self.geneSize = geneSize
+        self.fitnessFunction = fitnessFunction
         self.lowerBound = lowerBound
         self.upperBound = upperBound
 
         # Parameters of GeneticAlgorithm.
-        self.maxIteractions = maxIteractions
+        self.maxGenerations = maxIteractions
         self.populationSize = populationSize
-        self.eliteNum = eliteNum
+        self.eliteSize = eliteSize
         self.threshold = threshold
 
         # Methods of GeneticAlgorithm.
@@ -30,7 +29,7 @@ class GeneticAlgorithm:
         self.crossover = crossoverMethod if crossoverMethod else GeneticAlgorithm.singlePointCrossover
 
         # Parameters of methods.
-        self.crossoverNum = self.populationSize - self.eliteNum
+        self.crossoverNum = self.populationSize - self.eliteSize
         self.chromosomeMutationRate = chromosomeMutationRate
         self.geneMutationRate = geneMutationRate
         self.tournamentSize = tournamentSize
@@ -136,14 +135,14 @@ class GeneticAlgorithm:
 
     def firstPopulation(self):
         self.population = np.random.uniform(self.lowerBound, self.upperBound, (self.populationSize, self.geneSize))
-        self.fitValues = self.minFunction(self.population.T)
+        self.fitValues = self.fitnessFunction(self.population.T)
         self.sortPopulation()
 
 
     def nextGeneration(self):
         offspring = self.mutation(self, self.crossover(self, self.selectCouples(self)))
-        self.population[self.eliteNum:] = offspring
-        self.fitValues[self.eliteNum:] = self.minFunction(offspring.T)
+        self.population[self.eliteSize:] = offspring
+        self.fitValues[self.eliteSize:] = self.fitnessFunction(offspring.T)
         self.sortPopulation()
 
    
@@ -153,7 +152,7 @@ class GeneticAlgorithm:
     def run(self):
         self.firstPopulation()
 
-        for _ in range(self.maxIteractions):
+        for _ in range(self.maxGenerations):
             if self.fitValues[0] < self.threshold:
                 break
 
