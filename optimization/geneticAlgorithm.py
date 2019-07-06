@@ -44,22 +44,22 @@ class GeneticAlgorithm:
         return tournament.min(axis = 0)
 
 
-    # Stochastic selection
-    def stochasticSelect(self):
-        cumsum = np.cumsum(self.fitValues[-1] - self.fitValues)
-        distance = cumsum[-1] / self.crossoverNum
-        points = distance * np.concatenate((np.arange(random.random(), self.crossoverNum), np.arange(random.random(), self.crossoverNum)))
-        return np.searchsorted(cumsum, points).reshape(2, self.crossoverNum)
-
-
     # Roulette Wheel selection.
     def wheelSelect(self):
         roulette = self.fitValues[-1] - self.fitValues
         return np.random.choice(self.populationSize, size = (2, self.crossoverNum), p = roulette / np.add.reduce(roulette))
 
 
+    # Stochastic selection. (Can be better)
+    def stochasticSelect(self):
+        cumsum = np.cumsum(self.fitValues[-1] - self.fitValues)
+        distance = cumsum[-1] / self.crossoverNum
+        points = np.random.permutation(distance * np.arange(random.random(), 2*self.crossoverNum) / 2.)
+        return np.searchsorted(cumsum, points).reshape(2, self.crossoverNum)
+
+
     """
-    Methods linked to the crossover.
+    Methods of crossover.
     """
     # Creates a boolean mask.
     def booleanMask(self, height, width):
