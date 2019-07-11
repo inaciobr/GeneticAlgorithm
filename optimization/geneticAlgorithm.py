@@ -55,7 +55,7 @@ class GeneticAlgorithm:
         cumsum = np.cumsum(self.fitValues[-1] - self.fitValues)
         distance = cumsum[-1] / self.crossoverNum
         points = np.random.permutation(distance * np.arange(random.random(), 2*self.crossoverNum) / 2.)
-        return np.searchsorted(cumsum, points).reshape(2, self.crossoverNum)
+        return cumsum.searchsorted(points).reshape(2, self.crossoverNum)
 
 
     """
@@ -97,7 +97,7 @@ class GeneticAlgorithm:
     # This function has a chance of choosing each chromosome.
     # The chromosome chosen will have a random gene changed to a random value.
     def chromosomeMutation(self, population):
-        elements = np.nonzero(np.random.rand(population.shape[0]) < self.chromosomeMutationRate)[0]
+        elements = (np.random.rand(population.shape[0]) < self.chromosomeMutationRate).nonzero()[0]
         positions = np.random.randint(0, population.shape[1], elements.size)
         population[elements, positions] = np.random.uniform(self.lowerBound[positions], self.upperBound[positions], positions.size)
         return population
