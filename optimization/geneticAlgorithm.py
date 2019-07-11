@@ -99,7 +99,7 @@ class GeneticAlgorithm:
     def chromosomeMutation(self, population):
         elements = np.nonzero(np.random.rand(population.shape[0]) < self.chromosomeMutationRate)[0]
         positions = np.random.randint(0, population.shape[1], elements.size)
-        population[elements, positions] = np.random.uniform(self.lowerBound[positions], self.upperBound[positions], elements.size)
+        population[elements, positions] = np.random.uniform(self.lowerBound[positions], self.upperBound[positions], positions.size)
         return population
 
 
@@ -107,7 +107,7 @@ class GeneticAlgorithm:
     # Every gene chosen will be changed to a random value.
     def geneMutation(self, population):
         mask = np.random.rand(*population.shape) < self.geneMutationRate
-        positions = np.nonzero(mask.flatten)[0] % population.shape[1]
+        positions = mask.ravel().nonzero()[0] % population.shape[1]
         population[mask] = np.random.uniform(self.lowerBound[positions], self.upperBound[positions], positions.size)
         return population
 

@@ -11,7 +11,7 @@ import cProfile
 
 
 def minimize():
-    nVars = 100                      # Number of variables in the problem.
+    nVars = 100                     # Number of variables in the problem.
     func = testFunctions.sphere     # Function to be optimized.
 
     duration = -time.time()
@@ -26,7 +26,7 @@ def minimize():
                      threshold = np.NINF,
 
                      selectionMethod = opt.GeneticAlgorithm.tournamentSelect,
-                     mutationMethod = opt.GeneticAlgorithm.geneMutation,
+                     mutationMethod = opt.GeneticAlgorithm.chromosomeMutation,
                      crossoverMethod = opt.GeneticAlgorithm.uniformCrossover,
                      
                      chromosomeMutationRate = 0.2,
@@ -42,6 +42,6 @@ def minimize():
 
 
 if __name__ == "__main__":
-    print("===== Genetic Algorithm =====")
-    #cProfile.run("minimize()")
+    #print("===== Genetic Algorithm =====")
+    cProfile.run("minimize()")
     minimize()
