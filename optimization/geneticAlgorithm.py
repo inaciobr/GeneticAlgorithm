@@ -50,7 +50,7 @@ class GeneticAlgorithm:
         return np.random.choice(self.populationSize, size = (2, self.crossoverNum), p = roulette / np.add.reduce(roulette))
 
 
-    # Stochastic selection. (Can be better)
+    # *Stochastic selection. (Can be better)
     def stochasticSelect(self):
         cumsum = np.cumsum(self.fitValues[-1] - self.fitValues)
         distance = cumsum[-1] / self.crossoverNum
@@ -61,40 +61,34 @@ class GeneticAlgorithm:
     """
     Methods of crossover.
     """
-    # Creates a boolean mask.
-    def booleanMask(self, height, width):
-        num = height * width
-        numBytes = -(-num // 8)
-        seqBytes = np.frombuffer(np.random.bytes(numBytes), np.uint8)
-        return np.unpackbits(seqBytes)[:num].reshape(height, width)
-
-
     # Makes the crossover between two chromosomes randomly choosing the source of each gene.
     def uniformCrossover(self, couples):
-        truth = self.booleanMask(couples.size // 2, self.geneSize)
-        return np.where(truth, *self.population[couples])
+        height = couples.size // 2
+        size = height * self.geneSize
+        mask = np.unpackbits(np.frombuffer(np.random.bytes(-(-size//8)), np.uint8))[:size].reshape(height, self.geneSize)
+        return np.where(mask, *self.population[couples])
 
 
     # Makes the crossover between two chromosomes using genes from one parent before a random point and
     # from the other parent after that point.
     def singlePointCrossover(self, couples):
-        truth = np.arange(self.geneSize) < np.random.randint(0, self.geneSize + 1, couples.size // 2)[:, None]
-        return np.where(truth, *self.population[couples])
+        mask = np.arange(self.geneSize) < np.random.randint(0, self.geneSize + 1, couples.size // 2)[:, None]
+        return np.where(mask, *self.population[couples])
 
 
-    # Makes the crossover between two chromosomes using genes from one parent between two random points and
-    # from the other parent outside the interval defined by the points.
+    # *Makes the crossover between two chromosomes using genes from one parent between two random points and
+    # from the other parent outside the interval defined by the points. (Can be better)
     def twoPointCrossover(self, couples):
         grid = np.arange(self.geneSize)
         rand = np.sort(np.random.randint(0, self.geneSize + 1, (2, couples.size // 2, 1)))
         rand[0] -= 1
-        truth = (grid >= rand[0]) & (grid < rand[1])
-        return np.where(truth, *self.population[couples])
+        mask = (grid >= rand[0]) & (grid < rand[1])
+        return np.where(mask, *self.population[couples])
 
 
     # Don't make any crossover.
     def noCrossover(self, couples):
-        return self.population[couples[0]]
+        return self.population[couples[0]] 
 
 
     """
@@ -103,8 +97,8 @@ class GeneticAlgorithm:
     # This function has a chance of choosing each chromosome.
     # The chromosome chosen will have a random gene changed to a random value.
     def chromosomeMutation(self, population):
-        elements = np.nonzero(np.random.rand(self.crossoverNum) < self.chromosomeMutationRate)[0]
-        positions = np.random.randint(0, self.geneSize, elements.size)
+        elements = np.nonzero(np.random.rand(population.shape[0]) < self.chromosomeMutationRate)[0]
+        positions = np.random.randint(0, population.shape[1], elements.size)
         population[elements, positions] = np.random.uniform(self.lowerBound[positions], self.upperBound[positions], elements.size)
         return population
 
@@ -112,10 +106,9 @@ class GeneticAlgorithm:
     # This function has a chance of choosing each gene.
     # Every gene chosen will be changed to a random value.
     def geneMutation(self, population):
-        mutation = np.random.rand(*population.shape) < self.geneMutationRate
-        population[mutation] = np.random.uniform(self.lowerBound[None, :].repeat(self.crossoverNum, 0)[mutation],
-                                                 self.upperBound[None, :].repeat(self.crossoverNum, 0)[mutation],
-                                                 np.count_nonzero(mutation))
+        mask = np.random.rand(*population.shape) < self.geneMutationRate
+        positions = np.nonzero(mask.flatten)[0] % population.shape[1]
+        population[mask] = np.random.uniform(self.lowerBound[positions], self.upperBound[positions], positions.size)
         return population
 
 
