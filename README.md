@@ -2,6 +2,7 @@
 Optimization algorithms included so far:
 1. Genetic Algorithm
 
+
 ## 1. Genetic Algorithm
 Example of usage:
 
@@ -36,15 +37,16 @@ The combination of the two arguments mentioned also depends on the problem, but 
 It is also important to notice that in some problems, the choice of the right methods may be relevant. In this case, it's possible to choose different methods for selection, mutation and crossover. The module geneticAlgorithm provides some methods, but it also allows the developer to create new ones.
 The methods can be selected by passing them in the arguments of the GA function:
 
-### 1.1 Selection Methods
-* Roulette Wheel selection
-```python
-selectionMethod = opt.GeneticAlgorithm.wheelSelect
-```
 
+### 1.1 Selection Methods
 * Tournament selection
 ```python
 selectionMethod = opt.GeneticAlgorithm.tournamentSelect
+```
+
+* Roulette Wheel selection
+```python
+selectionMethod = opt.GeneticAlgorithm.wheelSelect
 ```
 
 * Stochastic selection
@@ -53,18 +55,7 @@ selectionMethod = opt.GeneticAlgorithm.stochasticSelect
 ```
 
 
-### 1.2 Mutation Methods
-* Chromosome mutation
-```python
-mutationMethod = opt.GeneticAlgorithm.chromosomeMutation
-```
-
-* Gene mutation
-```python
-mutationMethod = opt.GeneticAlgorithm.geneMutation
-```
-
-### 1.3 Crossover Methods
+### 1.2 Crossover Methods
 * Uniform crossover
 ```python
 crossoverMethod = opt.GeneticAlgorithm.uniformCrossover
@@ -83,4 +74,16 @@ crossoverMethod = opt.GeneticAlgorithm.twoPointCrossover
 * No crossover
 ```python
 crossoverMethod = opt.GeneticAlgorithm.noCrossover
+```
+
+
+### 1.3 Mutation Methods
+* Chromosome mutation
+```python
+mutationMethod = opt.GeneticAlgorithm.chromosomeMutation
+```
+
+* Gene mutation
+```python
+mutationMethod = opt.GeneticAlgorithm.geneMutation
 ```
