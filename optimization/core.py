@@ -16,8 +16,8 @@ def GA(minFunction, inputSize, lowerBound, upperBound, maxIteractions = 0, popul
        threshold = np.NINF, selectionMethod = None, mutationMethod = None, crossoverMethod = None,
        chromosomeMutationRate = 0.2, geneMutationRate = 0.01, tournamentPercentage = 0.1):
 
-    GA = GeneticAlgorithm(fitnessFunction = minFunction,
-                          geneSize = inputSize,
+    GA = GeneticAlgorithm(fitness = minFunction,
+                          size = inputSize,
                           lowerBound = lowerBound,
                           upperBound = upperBound,
 

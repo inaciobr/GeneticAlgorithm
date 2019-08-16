@@ -29,7 +29,7 @@ def minimize():
                      mutationMethod = opt.GeneticAlgorithm.chromosomeMutation,
                      crossoverMethod = opt.GeneticAlgorithm.uniformCrossover,
                      
-                     chromosomeMutationRate = 0.2,
+                     chromosomeMutationRate = 0.20,
                      geneMutationRate = 0.01,
                      tournamentPercentage = 0.05)
     duration += time.time()
@@ -43,5 +43,5 @@ def minimize():
 
 if __name__ == "__main__":
     #print("===== Genetic Algorithm =====")
-    cProfile.run("minimize()")
+    #cProfile.run("minimize()")
     minimize()
