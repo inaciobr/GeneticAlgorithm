@@ -36,7 +36,7 @@ class GeneticAlgorithm:
 
 
     """
-    Methods of selection of couples (one of them must be chosen).
+    Methods of selection of parents (one of them must be chosen).
     """
     # Tournament selection.
     def tournamentSelect(self):
@@ -50,45 +50,51 @@ class GeneticAlgorithm:
         return np.random.choice(self.populationSize, (2, self.crossoverSize), p = roulette / np.add.reduce(roulette))
 
 
+    # Rank Selection.
+    def rankSelect(self):
+        rank = 2*np.arange(self.populationSize, 0, -1) / self.populationSize / (self.populationSize + 1)
+        return np.random.choice(self.populationSize, (2, self.crossoverSize), p = rank)
+
+
     # *Stochastic selection. (Can be better)
     def stochasticSelect(self):
-        cumsum = np.cumsum(self.values[-1] - self.values)
-        distance = cumsum[-1] / self.crossoverSize
+        cumulative = (self.values[-1] - self.values).cumsum()
+        distance = cumulative[-1] / self.crossoverSize
         points = np.random.permutation(distance * np.arange(random.random(), 2*self.crossoverSize) / 2.)
-        return cumsum.searchsorted(points).reshape(2, self.crossoverSize)
+        return cumulative.searchsorted(points).reshape(2, self.crossoverSize)
 
 
     """
     Methods of crossover.
     """
     # Don't make any crossover.
-    def noCrossover(self, couples):
-        return self.population[couples[0]]
+    def noCrossover(self, parents):
+        return self.population[parents[0]]
 
 
     # Makes the crossover between two chromosomes using genes from one parent before a random point and
     # from the other parent after that point.
-    def singlePointCrossover(self, couples):
-        mask = np.arange(self.geneSize) < np.random.randint(0, self.geneSize + 1, (couples.size // 2, 1))
-        return np.where(mask, *self.population[couples])
+    def singlePointCrossover(self, parents):
+        mask = np.arange(self.geneSize) < np.random.randint(0, self.geneSize + 1, (parents.size // 2, 1))
+        return np.where(mask, *self.population[parents])
 
 
     # *Makes the crossover between two chromosomes using genes from one parent between two random points and
     # from the other parent outside the interval defined by the points. (Can be better)
-    def twoPointCrossover(self, couples):
+    def twoPointCrossover(self, parents):
         grid = np.arange(self.geneSize)
-        rand = np.sort(np.random.randint(0, self.geneSize + 1, (2, couples.size // 2, 1)))
+        rand = np.sort(np.random.randint(0, self.geneSize + 1, (2, parents.size // 2, 1)))
         rand[0] -= 1
         mask = (grid >= rand[0]) & (grid < rand[1])
-        return np.where(mask, *self.population[couples])
+        return np.where(mask, *self.population[parents])
 
 
     # Makes the crossover between two chromosomes randomly choosing the source of each gene.
-    def uniformCrossover(self, couples):
-        height = couples.size // 2
+    def uniformCrossover(self, parents):
+        height = parents.size // 2
         size = height * self.geneSize
         mask = np.unpackbits(np.frombuffer(np.random.bytes(-(-size//8)), np.uint8))[:size].reshape(height, self.geneSize)
-        return np.where(mask, *self.population[couples])
+        return np.where(mask, *self.population[parents])
 
 
     """
