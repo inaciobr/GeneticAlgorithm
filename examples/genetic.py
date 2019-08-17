@@ -25,7 +25,7 @@ def minimize():
                      elitePercentage = 0.05,
                      threshold = np.NINF,
 
-                     selectionMethod = opt.GeneticAlgorithm.rankSelect,
+                     selectionMethod = opt.GeneticAlgorithm.stochasticSelect,
                      mutationMethod = opt.GeneticAlgorithm.chromosomeMutation,
                      crossoverMethod = opt.GeneticAlgorithm.uniformCrossover,
                      

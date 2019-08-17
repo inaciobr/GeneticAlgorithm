@@ -50,18 +50,20 @@ class GeneticAlgorithm:
         return np.random.choice(self.populationSize, (2, self.crossoverSize), p = roulette / np.add.reduce(roulette))
 
 
-    # Rank Selection.
+    # Rank selection.
     def rankSelect(self):
-        rank = 2*np.arange(self.populationSize, 0, -1) / self.populationSize / (self.populationSize + 1)
-        return np.random.choice(self.populationSize, (2, self.crossoverSize), p = rank)
+        rank = np.arange(self.populationSize, 0, -1)
+        total = self.populationSize * (self.populationSize + 1) / 2
+        return np.random.choice(self.populationSize, (2, self.crossoverSize), p = rank / total)
 
 
-    # *Stochastic selection. (Can be better)
+    # Stochastic selection.
     def stochasticSelect(self):
-        cumulative = (self.values[-1] - self.values).cumsum()
-        distance = cumulative[-1] / self.crossoverSize
-        points = np.random.permutation(distance * np.arange(random.random(), 2*self.crossoverSize) / 2.)
-        return cumulative.searchsorted(points).reshape(2, self.crossoverSize)
+        rule = (self.values[-1] - self.values).cumsum()
+        distance = rule[-1] / (2*self.crossoverSize)
+        points = rule.searchsorted(distance * np.arange(random.random(), 2*self.crossoverSize))
+        np.random.shuffle(points)        
+        return points.reshape(2, self.crossoverSize)
 
 
     """
@@ -121,18 +123,21 @@ class GeneticAlgorithm:
     """
     Methods related to the population and the generations.
     """
+    # Sorts the population.
     def sortPopulation(self):
         argSort = self.values.argsort()
         self.values = self.values[argSort]
         self.population = self.population[argSort]
 
 
+    # Generates the first population.
     def populate(self):
         self.population = np.random.uniform(self.lowerBound, self.upperBound, (self.populationSize, self.geneSize))
         self.values = self.fitness(self.population.T)
         self.sortPopulation()
 
 
+    # Generates the next generation's population.
     def nextGeneration(self):
         offspring = self.mutation(self, self.crossover(self, self.selection(self)))
         self.population[self.eliteSize:] = offspring
