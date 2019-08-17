@@ -17,18 +17,18 @@ class GeneticAlgorithm:
         self.lowerBound = lowerBound
         self.upperBound = upperBound
 
-        # Parameters of GeneticAlgorithm.
+        # Genetic Algorithm's parameters.
         self.populationSize = populationSize
         self.maxGenerations = maxIteractions
         self.eliteSize = eliteSize
         self.threshold = threshold
 
-        # Methods of GeneticAlgorithm.
+        # Genetic Algorithm's methods.
         self.selection = selectionMethod if selectionMethod else GeneticAlgorithm.tournamentSelect
         self.mutation = mutationMethod if mutationMethod else GeneticAlgorithm.geneMutation
         self.crossover = crossoverMethod if crossoverMethod else GeneticAlgorithm.singlePointCrossover
 
-        # Parameters of methods.
+        # Methods' parameters (change ?).
         self.crossoverSize = self.populationSize - self.eliteSize
         self.chromosomeMutationRate = chromosomeMutationRate
         self.geneMutationRate = geneMutationRate
@@ -36,9 +36,10 @@ class GeneticAlgorithm:
 
 
     """
-    Methods of selection of parents (one of them must be chosen).
+    Selection methods (one of them must be chosen).
     """
     # Tournament selection.
+    # Recommended.
     def tournamentSelect(self):
         tournament = np.random.randint(0, self.populationSize, (self.tournamentSize, 2, self.crossoverSize))
         return tournament.min(axis = 0)
@@ -67,40 +68,41 @@ class GeneticAlgorithm:
 
 
     """
-    Methods of crossover.
+    Crossover methods (one of them must be chosen).
     """
-    # Don't make any crossover.
-    def noCrossover(self, parents):
-        return self.population[parents[0]]
-
-
-    # Makes the crossover between two chromosomes using genes from one parent before a random point and
-    # from the other parent after that point.
-    def singlePointCrossover(self, parents):
-        mask = np.arange(self.geneSize) < np.random.randint(0, self.geneSize + 1, (parents.size // 2, 1))
+    # Does the crossover between two chromosomes randomly choosing the source of each gene.
+    # Recommended.
+    def uniformCrossover(self, parents):
+        size = self.crossoverSize * self.geneSize
+        mask = np.unpackbits(np.frombuffer(np.random.bytes(-(-size//8)), np.uint8))[:size]
+        mask = mask.reshape(self.crossoverSize, self.geneSize)
         return np.where(mask, *self.population[parents])
 
 
-    # *Makes the crossover between two chromosomes using genes from one parent between two random points and
-    # from the other parent outside the interval defined by the points. (Can be better)
+    # Does the crossover between two chromosomes using genes from one parent
+    # until a random point and from the other parent after that point.
+    def singlePointCrossover(self, parents):
+        mask = np.arange(self.geneSize) < np.random.randint(0, self.geneSize + 1, (self.crossoverSize, 1))
+        return np.where(mask, *self.population[parents])
+
+
+    # *Does the crossover between two chromosomes using genes from one parent between two random points
+    # and from the other parent outside the interval defined by the points. (Can be better)
     def twoPointCrossover(self, parents):
         grid = np.arange(self.geneSize)
-        rand = np.sort(np.random.randint(0, self.geneSize + 1, (2, parents.size // 2, 1)))
+        rand = np.sort(np.random.randint(0, self.geneSize + 1, (2, self.crossoverSize, 1)))
         rand[0] -= 1
         mask = (grid >= rand[0]) & (grid < rand[1])
         return np.where(mask, *self.population[parents])
 
 
-    # Makes the crossover between two chromosomes randomly choosing the source of each gene.
-    def uniformCrossover(self, parents):
-        height = parents.size // 2
-        size = height * self.geneSize
-        mask = np.unpackbits(np.frombuffer(np.random.bytes(-(-size//8)), np.uint8))[:size].reshape(height, self.geneSize)
-        return np.where(mask, *self.population[parents])
+    # Don't do any crossover.
+    def noCrossover(self, parents):
+        return self.population[parents[0]]
 
 
     """
-    Methods of mutation (one of them must be chosen).
+    Mutation methods (one of them must be chosen).
     """
     # This function has a chance of choosing each chromosome.
     # The chromosome chosen will have a random gene changed to a random value.
@@ -113,6 +115,7 @@ class GeneticAlgorithm:
 
     # This function has a chance of choosing each gene.
     # Every gene chosen will be changed to a random value.
+    # Uniform Crossover
     def geneMutation(self, population):
         mask = np.random.rand(*population.shape) < self.geneMutationRate
         positions = mask.ravel().nonzero()[0] % population.shape[1]
@@ -146,7 +149,7 @@ class GeneticAlgorithm:
 
    
     """
-    Iterates over the generations.
+    GA's execution.
     """
     def run(self):
         self.populate()
