@@ -15,23 +15,23 @@ def minimize():
     func = testFunctions.sphere     # Function to be optimized.
 
     duration = -time.time()
-    minArgs = opt.GA(minFunction = func,
-                     inputSize = nVars,
-                     lowerBound = np.array([-30.0] * nVars),
-                     upperBound = np.array([+30.0] * nVars),
+    minArgs = opt.GA(fitness = func,
+                     size = nVars,
+                     lowerBound = -30.0,
+                     upperBound = +30.0,
 
-                     maxIteractions = 100 * nVars,
-                     populationSize = min(20 * nVars, 200),
-                     elitePercentage = 0.05,
+                     maxGenerations = 100 * nVars,
                      threshold = np.NINF,
 
-                     selectionMethod = opt.GeneticAlgorithm.tournamentSelect,
-                     mutationMethod = opt.GeneticAlgorithm.chromosomeMutation,
-                     crossoverMethod = opt.GeneticAlgorithm.uniformCrossover,
+                     populationSize = 200,
+                     eliteSize = 10,
 
-                     chromosomeMutationRate = 0.20,
-                     geneMutationRate = 0.01,
-                     tournamentPercentage = 0.05)
+                     selection = 'tournament',
+                     mutation = 'chromosome',
+                     crossover = 'uniform',
+
+                     mutationRate = 0.75,
+                     tournamentSize = 0.05)
     duration += time.time()
 
     #print("{:3d}, {:7.4f}, {:5.3f}".format(nVars, duration, func(minArgs)))

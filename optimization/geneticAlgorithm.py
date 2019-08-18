@@ -2,37 +2,43 @@ import numpy as np
 import math
 import random
 
+
+__all__ = ['GeneticAlgorithm']
+
+
 """
 Genetic Algorithm used to minimize positive functions.
 """
 class GeneticAlgorithm:
-    def __init__(self, fitness, size, lowerBound, upperBound, populationSize,
-                 maxIteractions, eliteSize, threshold = np.NINF, 
-                 selectionMethod = None, mutationMethod = None, crossoverMethod = None,
-                 chromosomeMutationRate = 0.2, geneMutationRate = 0.01, tournamentSize = 5):
+    def __init__(self, fitness, size, lowerBound, upperBound,
+                 maxGenerations = None, threshold = np.NINF,
+                 populationSize = 200, eliteSize = 10, mutationRate = 0.01,
+                 selection = 'tournament', mutation = 'gene', crossover = 'uniform',
+                 **kwargs):
 
         # Function to be optimized.
         self.fitness = fitness
         self.geneSize = size
-        self.lowerBound = lowerBound
-        self.upperBound = upperBound
+        self.lowerBound = lowerBound if type(lowerBound) is np.ndarray else np.array([lowerBound] * size)
+        self.upperBound = upperBound if type(upperBound) is np.ndarray else np.array([upperBound] * size)
 
-        # Genetic Algorithm's parameters.
-        self.populationSize = populationSize
-        self.maxGenerations = maxIteractions
-        self.eliteSize = eliteSize
+        # Generations Parameters.
+        self.maxGenerations = maxGenerations if maxGenerations else 100*size
         self.threshold = threshold
 
-        # Genetic Algorithm's methods.
-        self.selection = selectionMethod if selectionMethod else GeneticAlgorithm.tournamentSelect
-        self.mutation = mutationMethod if mutationMethod else GeneticAlgorithm.geneMutation
-        self.crossover = crossoverMethod if crossoverMethod else GeneticAlgorithm.singlePointCrossover
+        # Genetic Algorithm methods.
+        self.selection = getattr(self, selection + 'Select')
+        self.mutation = getattr(self, mutation + 'Mutation')
+        self.crossover = getattr(self, crossover + 'Crossover')
 
-        # Methods' parameters (change ?).
+        # Population Parameters.
+        self.populationSize = populationSize
+        self.mutationRate = mutationRate
+        self.eliteSize = eliteSize
         self.crossoverSize = self.populationSize - self.eliteSize
-        self.chromosomeMutationRate = chromosomeMutationRate
-        self.geneMutationRate = geneMutationRate
-        self.tournamentSize = tournamentSize
+
+        # Method parameters.
+        self.parameters = kwargs
 
 
     """
@@ -41,7 +47,8 @@ class GeneticAlgorithm:
     # Tournament selection.
     # Recommended.
     def tournamentSelect(self):
-        tournament = np.random.randint(0, self.populationSize, (self.tournamentSize, 2, self.crossoverSize))
+        tournamentSize = self.parameters.get('tournamentSize', 10)
+        tournament = np.random.randint(0, self.populationSize, (tournamentSize, 2, self.crossoverSize))
         return tournament.min(axis = 0)
 
 
@@ -107,7 +114,7 @@ class GeneticAlgorithm:
     # This function has a chance of choosing each chromosome.
     # The chromosome chosen will have a random gene changed to a random value.
     def chromosomeMutation(self, population):
-        elements = (np.random.rand(population.shape[0]) < self.chromosomeMutationRate).nonzero()[0]
+        elements = (np.random.rand(population.shape[0]) < self.mutationRate).nonzero()[0]
         positions = np.random.randint(0, population.shape[1], elements.size)
         population[elements, positions] = np.random.uniform(self.lowerBound[positions], self.upperBound[positions], positions.size)
         return population
@@ -117,7 +124,7 @@ class GeneticAlgorithm:
     # Every gene chosen will be changed to a random value.
     # Uniform Crossover
     def geneMutation(self, population):
-        mask = np.random.rand(*population.shape) < self.geneMutationRate
+        mask = np.random.rand(*population.shape) < self.mutationRate
         positions = mask.ravel().nonzero()[0] % population.shape[1]
         population[mask] = np.random.uniform(self.lowerBound[positions], self.upperBound[positions], positions.size)
         return population
@@ -142,7 +149,7 @@ class GeneticAlgorithm:
 
     # Generates the next generation's population.
     def nextGeneration(self):
-        offspring = self.mutation(self, self.crossover(self, self.selection(self)))
+        offspring = self.mutation(self.crossover(self.selection()))
         self.population[self.eliteSize:] = offspring
         self.values[self.eliteSize:] = self.fitness(offspring.T)
         self.sortPopulation()
