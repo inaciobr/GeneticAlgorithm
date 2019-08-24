@@ -28,7 +28,7 @@ def minimize():
 
                      selection = 'tournament',
                      mutation = 'chromosome',
-                     crossover = 'average',
+                     crossover = 'uniform',
 
                      mutationRate = 0.75,
                      tournamentSize = 0.05)
