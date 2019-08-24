@@ -93,14 +93,25 @@ class GeneticAlgorithm:
         return np.where(mask, *self.population[parents])
 
 
-    # *Does the crossover between two chromosomes using genes from one parent between two random points
-    # and from the other parent outside the interval defined by the points. (Can be better)
+    # Does the crossover between two chromosomes using genes from one parent between two random points
+    # and from the other parent outside the interval defined by the points.
     def twoPointCrossover(self, parents):
         grid = np.arange(self.geneSize)
-        rand = np.sort(np.random.randint(0, self.geneSize + 1, (2, self.crossoverSize, 1)))
-        rand[0] -= 1
-        mask = (grid >= rand[0]) & (grid < rand[1])
+        rand = np.random.randint(0, self.geneSize + 1, (2, self.crossoverSize, 1))
+        mask = (grid < rand[0]) ^ (grid > rand[1] - 1)
         return np.where(mask, *self.population[parents])
+
+
+    # Does the crossover between two chromosomes using the average value between alleles.
+    def averageCrossover(self, parents):
+        return (self.population[parents[0]] + self.population[parents[1]]) / 2
+
+
+    # Does the crossover between two chromosomes using a random value between the minimum and maximum
+    # values of each allele.
+    def flatCrossover(self, parents):
+        r = np.random.rand(self.crossoverSize, self.geneSize)
+        return r*self.population[parents[0]] + (1 - r)*self.population[parents[1]]
 
 
     # Don't do any crossover.
