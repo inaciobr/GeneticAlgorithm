@@ -163,11 +163,28 @@ class GeneticAlgorithm:
 
     # This function has a chance of choosing each gene.
     # Every gene chosen will be changed to a random value.
-    # Uniform Crossover
-    def geneMutation(self, population):
+    def uniformMutation(self, population):
         mask = np.random.rand(*population.shape) < self.mutationRate
         positions = mask.ravel().nonzero()[0] % population.shape[1]
+
         population[mask] = np.random.uniform(self.lowerBound[positions], self.upperBound[positions], positions.size)
+        
+        return population
+
+
+    # This function has a chance of choosing each gene.
+    # Every gene chosen will be increased or decreased by a random value
+    # between 0 and the range between maximum and minimum possible
+    def creepMutation(self, population):
+        mask = np.random.rand(*population.shape) < self.mutationRate
+        positions = mask.ravel().nonzero()[0] % population.shape[1]
+
+        creepFactor = self.parameters.get('creepFactor', 0.001)
+        geneMin, geneMax = self.lowerBound[positions], self.upperBound[positions]
+        geneRange = creepFactor*(geneMax - geneMin)
+
+        population[mask] = (population[mask] + np.random.uniform(-geneRange, geneRange, geneRange.size)).clip(geneMin, geneMax)
+
         return population
 
 
