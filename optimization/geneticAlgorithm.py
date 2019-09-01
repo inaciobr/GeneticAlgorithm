@@ -48,6 +48,7 @@ class GeneticAlgorithm:
     def tournamentSelect(self, size):
         tournamentSize = self.parameters.get('tournamentSize', 10)
         tournament = np.random.randint(0, self.populationSize, (tournamentSize, size))
+        
         return tournament.min(axis = 0)
 
 
@@ -61,16 +62,36 @@ class GeneticAlgorithm:
     def rankSelect(self, size):
         rank = np.arange(self.populationSize, 0, -1)
         total = self.populationSize * (self.populationSize + 1) / 2
+
         return np.random.choice(self.populationSize, size, p = rank / total)
 
 
-    # Stochastic selection.
-    def stochasticSelect(self, size):
+    # Stochastic Universal selection.
+    def stochasticUniversalSelect(self, size):
         rule = (self.values[-1] - self.values).cumsum()
         distance = rule[-1] / size
+
         points = rule.searchsorted(distance * np.arange(random.random(), size))
-        np.random.shuffle(points)        
+        np.random.shuffle(points)     
+
         return points
+
+
+    # Stochastic Remainder selection.
+    def stochasticRemainderSelect(self, size):
+        rule = (self.values[-1] - self.values)
+        fractionalRule, intRule = np.modf(rule / rule.mean())
+        fractionalRule /= np.add.reduce(fractionalRule)
+        intRule = intRule.cumsum()
+
+        pointsDeterministic = intRule.searchsorted(np.arange(intRule[-1]) + 1)
+        pointsRandom = np.random.choice(self.populationSize, int(size - intRule[-1]), p = fractionalRule)
+
+        points = np.concatenate((pointsDeterministic, pointsRandom))
+        np.random.shuffle(points)
+
+        return points
+
 
     # Uniform selection.
     def uniformSelect(self, size):
