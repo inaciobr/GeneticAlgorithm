@@ -15,25 +15,27 @@ def minimize():
     func = testFunctions.sphere     # Function to be optimized.
 
     duration = -time.time()
-    minArgs = opt.GA(fitness = func,
-                     size = nVars,
-                     lowerBound = -30.0,
-                     upperBound = +30.0,
 
-                     selection = 'tournament',
-                     mutation = 'gaussian',
-                     crossover = 'uniform',
+    minArgs, val = opt.GA(
+        fitness = func,
+        size = nVars,
+        lowerBound = -30.0,
+        upperBound = +30.0,
 
-                     mutationBy = 'chromosome',
-                     geneMutationRate = 0.75,
-                     tournamentSize = 10)
+        mutation = 'gaussian',
+        selection = 'tournament',
+        crossover = 'uniform',
+
+        mutationBy = 'chromosome',
+    )
+
     duration += time.time()
 
-    #print("{:3d}, {:7.4f}, {:5.3f}".format(nVars, duration, func(minArgs)))
+    #print("{:3d}, {:7.4f}, {:5.3f}".format(nVars, duration, val))
 
     print("Tempo de execução:", duration, "s.\n")
     #print(nVars, "argumentos que minimizam a função:\n", minArgs)
-    print("Valor da função neste ponto:", func(minArgs))
+    print("Valor da função neste ponto:", val)
 
 
 if __name__ == "__main__":
