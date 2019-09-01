@@ -16,6 +16,7 @@ class GeneticAlgorithm:
 
         # Function to be optimized.
         self.fitness = fitness
+        self.funcParams = kwargs.get('params', {})
         self.geneSize = size
         self.lowerBound = lowerBound if type(lowerBound) is np.ndarray else np.array([lowerBound] * size)
         self.upperBound = upperBound if type(upperBound) is np.ndarray else np.array([upperBound] * size)
@@ -206,7 +207,6 @@ class GeneticAlgorithm:
     # between 0 and the range between maximum and minimum possible
     def creepMutation(self, population):
         mask, geneMin, geneMax = self.mutationBy(population.shape)
-
         creepFactor = self.parameters.get('creepFactor', 0.001)
         geneRange = creepFactor*(geneMax - geneMin)
 
@@ -240,7 +240,7 @@ class GeneticAlgorithm:
     # Generates the first population.
     def populate(self):
         self.population = np.random.uniform(self.lowerBound, self.upperBound, (self.populationSize, self.geneSize))
-        self.values = self.fitness(self.population.T)
+        self.values = self.fitness(self.population.T, **self.funcParams)
         self.sortPopulation()
 
 
@@ -248,7 +248,7 @@ class GeneticAlgorithm:
     def nextGeneration(self):
         offspring = self.mutation(self.crossover())
         self.population[self.eliteSize:] = offspring
-        self.values[self.eliteSize:] = self.fitness(offspring.T)
+        self.values[self.eliteSize:] = self.fitness(offspring.T, **self.funcParams)
         self.sortPopulation()
 
    
@@ -258,10 +258,24 @@ class GeneticAlgorithm:
     def run(self):
         self.populate()
 
-        iters = self.maxGenerations
-        while iters and self.threshold < self.values[0]:
+        for _ in range(self.maxGenerations):
+            if self.values[0] <= self.threshold:
+                break
+
             self.nextGeneration()
-            iters -= 1
 
         # Returns the chromosome with best fit on the population, since it's ordered.
         return self.population[0]
+
+
+    def graph(self):
+        import matplotlib.pyplot as plt
+        values = np.zeros(self.maxGenerations)
+        self.populate()
+
+        for i in range(self.maxGenerations):
+            self.nextGeneration()
+            values[i] = self.values[0]
+
+        plt.plot(np.arange(self.maxGenerations), values)
+        plt.show()

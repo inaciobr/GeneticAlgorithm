@@ -24,8 +24,8 @@ def minimize():
                      mutation = 'gaussian',
                      crossover = 'uniform',
 
-                     mutationBy = 'gene',
-                     geneMutationRate = 0.01,
+                     mutationBy = 'chromosome',
+                     geneMutationRate = 0.75,
                      tournamentSize = 10)
     duration += time.time()
 
