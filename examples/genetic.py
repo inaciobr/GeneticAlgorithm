@@ -27,9 +27,10 @@ def minimize():
                      eliteSize = 10,
 
                      selection = 'tournament',
-                     mutation = 'uniform',
+                     mutation = 'gaussian',
                      crossover = 'uniform',
 
+                     mutationBy = 'gene',
                      geneMutationRate = 0.01,
                      tournamentSize = 10)
     duration += time.time()

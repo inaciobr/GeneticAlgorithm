@@ -11,9 +11,8 @@ Genetic Algorithm used to minimize positive functions.
 """
 class GeneticAlgorithm:
     def __init__(self, fitness, size, lowerBound, upperBound,
-                 maxGenerations = None, threshold = np.NINF,
-                 populationSize = 200, eliteSize = 10, mutationRate = 0.01,
-                 selection = 'tournament', mutation = 'gene', crossover = 'uniform',
+                 maxGenerations = None, threshold = np.NINF, populationSize = 200, eliteSize = 10,
+                 selection = 'tournament', mutation = 'gene', crossover = 'uniform', mutationBy = 'gene',
                  **kwargs):
 
         # Function to be optimized.
@@ -30,10 +29,10 @@ class GeneticAlgorithm:
         self.selection = getattr(self, selection + 'Select')
         self.mutation = getattr(self, mutation + 'Mutation')
         self.crossover = getattr(self, crossover + 'Crossover')
+        self.mutationBy = getattr(self, mutationBy + 'MutationBy')
 
         # Population Parameters.
         self.populationSize = populationSize
-        self.mutationRate = mutationRate
         self.eliteSize = eliteSize
         self.crossoverSize = self.populationSize - self.eliteSize
 
@@ -156,7 +155,8 @@ class GeneticAlgorithm:
     """
     Mutation selection (one of them must be chosen).
     """
-    def geneMutation(self, shape):
+    # Choose random genes in the population.
+    def geneMutationBy(self, shape):
         mutationRate = self.parameters.get('geneMutationRate', 0.01)
         mask = np.random.rand(*shape) < mutationRate
         genePositions = mask.ravel().nonzero()[0] % shape[1]
@@ -167,7 +167,9 @@ class GeneticAlgorithm:
         return mask, geneMin, geneMax
 
 
-    def chromosomeMutation(self, shape):
+    # Choose random chromosomes in the population and from
+    # each of the chosen ones, a random gene is selected.
+    def chromosomeMutationBy(self, shape):
         mutationRate = self.parameters.get('chromosomeMutationRate', 0.75)
         chromosomes = (np.random.rand(shape[0]) < mutationRate).nonzero()[0]
         genePositions = np.random.randint(0, shape[1], chromosomes.size)
@@ -183,7 +185,7 @@ class GeneticAlgorithm:
     """
     # Every gene chosen will be changed to a random value.
     def uniformMutation(self, population):
-        mask, geneMin, geneMax = self.geneMutation(population.shape)
+        mask, geneMin, geneMax = self.mutationBy(population.shape)
         population[mask] = np.random.uniform(geneMin, geneMax, geneMin.size)
         return population
 
@@ -191,7 +193,7 @@ class GeneticAlgorithm:
     # Every gene chosen will be increased or decreased by a random value
     # between 0 and the range between maximum and minimum possible
     def creepMutation(self, population):
-        mask, geneMin, geneMax = self.geneMutation(population.shape)
+        mask, geneMin, geneMax = self.mutationBy(population.shape)
 
         creepFactor = self.parameters.get('creepFactor', 0.001)
         geneRange = creepFactor*(geneMax - geneMin)
@@ -204,7 +206,7 @@ class GeneticAlgorithm:
 
     # Every gene chosen will have a value from a gaussian distribution added to it.
     def gaussianMutation(self, population):
-        mask, geneMin, geneMax = self.geneMutation(population.shape)
+        mask, geneMin, geneMax = self.mutationBy(population.shape)
         gaussianScale = self.parameters.get('gaussianScale', 1.0)
 
         population[mask] = (population[mask] + np.random.normal(scale = gaussianScale, size = geneMin.size))\
