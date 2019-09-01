@@ -11,8 +11,7 @@ Genetic Algorithm used to minimize positive functions.
 """
 class GeneticAlgorithm:
     def __init__(self, fitness, size, lowerBound, upperBound,
-                 maxGenerations = None, threshold = np.NINF, populationSize = 200, eliteSize = 10,
-                 selection = 'tournament', mutation = 'gene', crossover = 'uniform', mutationBy = 'gene',
+                 selection = 'tournament', mutation = 'gene', crossover = 'uniform',
                  **kwargs):
 
         # Function to be optimized.
@@ -21,19 +20,18 @@ class GeneticAlgorithm:
         self.lowerBound = lowerBound if type(lowerBound) is np.ndarray else np.array([lowerBound] * size)
         self.upperBound = upperBound if type(upperBound) is np.ndarray else np.array([upperBound] * size)
 
-        # Generations Parameters.
-        self.maxGenerations = maxGenerations if maxGenerations else 100*size
-        self.threshold = threshold
-
         # Genetic Algorithm methods.
         self.selection = getattr(self, selection + 'Select')
         self.mutation = getattr(self, mutation + 'Mutation')
         self.crossover = getattr(self, crossover + 'Crossover')
-        self.mutationBy = getattr(self, mutationBy + 'MutationBy')
+        self.mutationBy = getattr(self, kwargs.get('mutationBy', 'gene') + 'MutationBy')
 
-        # Population Parameters.
-        self.populationSize = populationSize
-        self.eliteSize = eliteSize
+        # Generations Parameters.
+        self.maxGenerations = kwargs.get('maxGenerations', 100 * self.geneSize)
+        self.threshold = kwargs.get('threshold', np.NINF)
+
+        self.populationSize = kwargs.get('populationSize', 200)
+        self.eliteSize = kwargs.get('eliteSize', self.populationSize // 20)
         self.crossoverSize = self.populationSize - self.eliteSize
 
         # Method parameters.
@@ -46,55 +44,49 @@ class GeneticAlgorithm:
     # Tournament selection.
     # Recommended.
     def tournamentSelect(self, size):
-        tournamentSize = self.parameters.get('tournamentSize', 10)
+        tournamentSize = self.parameters.get('tournamentSize', self.populationSize // 20)
         tournament = np.random.randint(0, self.populationSize, (tournamentSize, size))
-        
         return tournament.min(axis = 0)
 
 
     # Roulette Wheel selection.
     def wheelSelect(self, size):
         roulette = self.values[-1] - self.values
-        return np.random.choice(self.populationSize, size, p = roulette / np.add.reduce(roulette))
+        roulette /= np.add.reduce(roulette)
+        return np.random.choice(self.populationSize, size, p = roulette)
 
 
     # Rank selection.
     def rankSelect(self, size):
         rank = np.arange(self.populationSize, 0, -1)
-        total = self.populationSize * (self.populationSize + 1) / 2
-
-        return np.random.choice(self.populationSize, size, p = rank / total)
+        rank /= self.populationSize * (self.populationSize + 1) / 2
+        return np.random.choice(self.populationSize, size, p = rank)
 
 
     # Stochastic Universal selection.
     def stochasticUniversalSelect(self, size):
         rule = (self.values[-1] - self.values).cumsum()
         distance = rule[-1] / size
-
         points = rule.searchsorted(distance * np.arange(random.random(), size))
-        np.random.shuffle(points)     
-
-        return points
+        return np.random.permutation(points)
 
 
     # Stochastic Remainder selection.
     def stochasticRemainderSelect(self, size):
         rule = (self.values[-1] - self.values)
         fractionalRule, intRule = np.modf(rule / rule.mean())
-        fractionalRule /= np.add.reduce(fractionalRule)
+
         intRule = intRule.cumsum()
+        deterministicPoints = intRule.searchsorted(np.arange(intRule[-1]), 'right')
 
-        pointsDeterministic = intRule.searchsorted(np.arange(intRule[-1]) + 1)
-        pointsRandom = np.random.choice(self.populationSize, int(size - intRule[-1]), p = fractionalRule)
+        fractionalRule /= np.add.reduce(fractionalRule)
+        randomPoints = np.random.choice(self.populationSize, int(size - intRule[-1]), p = fractionalRule)
 
-        points = np.concatenate((pointsDeterministic, pointsRandom))
-        np.random.shuffle(points)
-
-        return points
+        return np.random.permutation(np.concatenate((deterministicPoints, randomPoints)))
 
 
     # Uniform selection.
-    def uniformSelect(self, size):
+    def noSelect(self, size):
         return np.random.randint(0, self.populationSize, size)
 
 
@@ -155,9 +147,8 @@ class GeneticAlgorithm:
     def flatCrossover(self):
         select = self.selection(2*self.crossoverSize).reshape(2, -1)
         parent1, parent2 = self.population[select]
-        rand = np.random.rand(*parent1.shape)
-
-        return parent1 + rand*(parent2 - parent1)
+        
+        return parent1 + np.random.rand(*parent1.shape)*(parent2 - parent1)
 
 
     # Does the crossover between two chromosomes using the average value between alleles.

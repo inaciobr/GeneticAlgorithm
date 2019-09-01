@@ -20,12 +20,6 @@ def minimize():
                      lowerBound = -30.0,
                      upperBound = +30.0,
 
-                     maxGenerations = 100 * nVars,
-                     threshold = np.NINF,
-
-                     populationSize = 200,
-                     eliteSize = 10,
-
                      selection = 'tournament',
                      mutation = 'gaussian',
                      crossover = 'uniform',
