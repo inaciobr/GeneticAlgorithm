@@ -154,56 +154,61 @@ class GeneticAlgorithm:
 
 
     """
+    Mutation selection (one of them must be chosen).
+    """
+    def geneMutation(self, population):
+        mutationRate = self.parameters.get('geneMutationRate', 0.1)
+        mask = np.random.rand(*population.shape) < mutationRate
+        genePositions = mask.ravel().nonzero()[0] % population.shape[1]
+
+        geneMin = self.lowerBound[genePositions]
+        geneMax = self.upperBound[genePositions]
+
+        return mask, geneMin, geneMax
+
+
+    def chromosomeMutation(self, population):
+        mutationRate = self.parameters.get('chromosomeMutationRate', 0.75)
+        chromosomes = (np.random.rand(population.shape[0]) < mutationRate).nonzero()[0]
+        genePositions = np.random.randint(0, population.shape[1], chromosomes.size)
+
+        geneMin = self.lowerBound[genePositions]
+        geneMax = self.upperBound[genePositions]
+
+        return (chromosomes, genePositions), geneMin, geneMax
+
+
+    """
     Mutation methods (one of them must be chosen).
     """
-    # This function has a chance of choosing each chromosome.
-    # The chromosome chosen will have a random gene changed to a random value.
-    def uniformChromosomeMutation(self, population):
-        elements = (np.random.rand(population.shape[0]) < self.mutationRate).nonzero()[0]
-        positions = np.random.randint(0, population.shape[1], elements.size)
-        
-        population[elements, positions] = np.random.uniform(self.lowerBound[positions], self.upperBound[positions], positions.size)
-        
-        return population
-
-
-    # This function has a chance of choosing each gene.
     # Every gene chosen will be changed to a random value.
     def uniformMutation(self, population):
-        mask = np.random.rand(*population.shape) < self.mutationRate
-        positions = mask.ravel().nonzero()[0] % population.shape[1]
-
-        population[mask] = np.random.uniform(self.lowerBound[positions], self.upperBound[positions], positions.size)
-        
+        mask, geneMin, geneMax = self.geneMutation(population)
+        population[mask] = np.random.uniform(geneMin, geneMax, geneMin.size)
         return population
 
 
-    # This function has a chance of choosing each gene.
     # Every gene chosen will be increased or decreased by a random value
     # between 0 and the range between maximum and minimum possible
     def creepMutation(self, population):
-        mask = np.random.rand(*population.shape) < self.mutationRate
-        positions = mask.ravel().nonzero()[0] % population.shape[1]
+        mask, geneMin, geneMax = self.geneMutation(population)
 
         creepFactor = self.parameters.get('creepFactor', 0.001)
-        geneMin, geneMax = self.lowerBound[positions], self.upperBound[positions]
         geneRange = creepFactor*(geneMax - geneMin)
 
-        population[mask] = (population[mask] + np.random.uniform(-geneRange, geneRange, geneRange.size)).clip(geneMin, geneMax)
+        population[mask] = (population[mask] + np.random.uniform(-geneRange, geneRange, geneRange.size))\
+            .clip(geneMin, geneMax)
 
         return population
 
 
-    # This function has a chance of choosing each gene.
     # Every gene chosen will have a value from a gaussian distribution added to it.
     def gaussianMutation(self, population):
-        mask = np.random.rand(*population.shape) < self.mutationRate
-        positions = mask.ravel().nonzero()[0] % population.shape[1]
-
+        mask, geneMin, geneMax = self.geneMutation(population)
         gaussianScale = self.parameters.get('gaussianScale', 1.0)
-        geneMin, geneMax = self.lowerBound[positions], self.upperBound[positions]
 
-        population[mask] = (population[mask] + np.random.normal(scale = gaussianScale, size = positions.size)).clip(geneMin, geneMax)
+        population[mask] = (population[mask] + np.random.normal(scale = gaussianScale, size = geneMin.size))\
+            .clip(geneMin, geneMax)
 
         return population
 

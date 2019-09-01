@@ -27,10 +27,10 @@ def minimize():
                      eliteSize = 10,
 
                      selection = 'tournament',
-                     mutation = 'uniformChromosome',
+                     mutation = 'creep',
                      crossover = 'uniform',
 
-                     mutationRate = 0.75,
+                     geneMmutationRate = 0.01,
                      tournamentSize = 0.05)
     duration += time.time()
 
