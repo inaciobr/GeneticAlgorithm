@@ -32,5 +32,5 @@ def GA(fitness, size, lowerBound, upperBound, maxGenerations = None,
                           crossover = crossover,
 
                           mutationRate = mutationRate,
-                          kwargs = kwargs)
+                          **kwargs)
     return GA.run()

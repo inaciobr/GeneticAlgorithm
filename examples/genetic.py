@@ -27,11 +27,11 @@ def minimize():
                      eliteSize = 10,
 
                      selection = 'tournament',
-                     mutation = 'creep',
+                     mutation = 'uniform',
                      crossover = 'uniform',
 
-                     geneMmutationRate = 0.01,
-                     tournamentSize = 0.05)
+                     geneMutationRate = 0.01,
+                     tournamentSize = 10)
     duration += time.time()
 
     #print("{:3d}, {:7.4f}, {:5.3f}".format(nVars, duration, func(minArgs)))
