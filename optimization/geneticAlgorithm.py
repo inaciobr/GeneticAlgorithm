@@ -73,6 +73,10 @@ class GeneticAlgorithm:
         np.random.shuffle(points)        
         return points
 
+    # Uniform selection.
+    def uniformSelect(self, size):
+        return np.random.randint(0, self.populationSize, size)
+
 
     """
     Crossover methods (one of them must be chosen).
@@ -154,10 +158,12 @@ class GeneticAlgorithm:
     """
     # This function has a chance of choosing each chromosome.
     # The chromosome chosen will have a random gene changed to a random value.
-    def chromosomeMutation(self, population):
+    def uniformChromosomeMutation(self, population):
         elements = (np.random.rand(population.shape[0]) < self.mutationRate).nonzero()[0]
         positions = np.random.randint(0, population.shape[1], elements.size)
+        
         population[elements, positions] = np.random.uniform(self.lowerBound[positions], self.upperBound[positions], positions.size)
+        
         return population
 
 
@@ -184,6 +190,20 @@ class GeneticAlgorithm:
         geneRange = creepFactor*(geneMax - geneMin)
 
         population[mask] = (population[mask] + np.random.uniform(-geneRange, geneRange, geneRange.size)).clip(geneMin, geneMax)
+
+        return population
+
+
+    # This function has a chance of choosing each gene.
+    # Every gene chosen will have a value from a gaussian distribution added to it.
+    def gaussianMutation(self, population):
+        mask = np.random.rand(*population.shape) < self.mutationRate
+        positions = mask.ravel().nonzero()[0] % population.shape[1]
+
+        gaussianScale = self.parameters.get('gaussianScale', 1.0)
+        geneMin, geneMax = self.lowerBound[positions], self.upperBound[positions]
+
+        population[mask] = (population[mask] + np.random.normal(scale = gaussianScale, size = positions.size)).clip(geneMin, geneMax)
 
         return population
 
