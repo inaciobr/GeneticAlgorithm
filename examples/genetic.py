@@ -22,9 +22,9 @@ def minimize():
         lowerBound = -30.0,
         upperBound = +30.0,
 
-        mutation = 'gaussian',
+        mutation = 'creep',
         selection = 'tournament',
-        crossover = 'uniform',
+        crossover = 'flat',
 
         mutationBy = 'chromosome',
     )
