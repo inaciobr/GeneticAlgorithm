@@ -10,7 +10,7 @@ __all__ = ['GeneticAlgorithm', 'GA']
 Genetic Algorithm used to minimize positive functions.
 """
 class GeneticAlgorithm:
-    def __init__(self, fitness, size, lowerBound, upperBound,
+    def __init__(self, fitness, size, lowerBound, upperBound, dtype = np.float64,
                  mutation = 'gaussian', selection = 'tournament', crossover = 'uniform',
                  **kwargs):
 
@@ -18,8 +18,12 @@ class GeneticAlgorithm:
         self.fitness = fitness
         self.fArgs = kwargs.get('fArgs', {})
         self.geneSize = size
-        self.lowerBound = lowerBound if type(lowerBound) is np.ndarray else np.array([lowerBound] * size)
-        self.upperBound = upperBound if type(upperBound) is np.ndarray else np.array([upperBound] * size)
+        self.dtype = dtype
+
+        self.lowerBound = lowerBound.astype(dtype) if type(lowerBound) is np.ndarray \
+                          else np.full(size, lowerBound, dtype)
+        self.upperBound = upperBound.astype(dtype) if type(upperBound) is np.ndarray \
+                          else np.full(size, upperBound, dtype)
 
         # Genetic Algorithm methods.
         self.mutation = getattr(self, mutation + 'Mutation')
@@ -129,7 +133,7 @@ class GeneticAlgorithm:
         parent1, parent2 = self.population[select]
 
         # Creates a random boolean mask with the same shape as the parents
-        mask = np.unpackbits(np.frombuffer(np.random.bytes(-(-parent1.size // 8)), np.uint8))
+        mask = np.unpackbits(np.frombuffer(np.random.bytes(math.ceil(parent1.size/8)), np.uint8))
         mask = mask[:parent1.size].reshape(*parent1.shape)
 
         # Second offspring will have the genes not selected on the first time
@@ -171,7 +175,7 @@ class GeneticAlgorithm:
         parent1, parent2 = self.population[select]
 
         # Creates a random boolean mask with the same shape as the parents
-        mask = np.unpackbits(np.frombuffer(np.random.bytes(-(-parent1.size // 8)), np.uint8))
+        mask = np.unpackbits(np.frombuffer(np.random.bytes(math.ceil(parent1.size/8)), np.uint8))
         mask = mask[:parent1.size].reshape(*parent1.shape)
 
         return np.where(mask, parent1, parent2)
@@ -265,7 +269,9 @@ class GeneticAlgorithm:
 
     # Generates the first population.
     def populate(self):
-        self.population = self.lowerBound + np.random.rand(self.populationSize, self.geneSize) * (self.upperBound - self.lowerBound)
+        self.population = self.lowerBound + (
+            np.random.rand(self.populationSize, self.geneSize) * (self.upperBound - self.lowerBound)
+        ).astype(self.dtype)
         self.values = self.fitness(self.population.T, **self.fArgs)
         self.sortPopulation()
 
@@ -313,7 +319,7 @@ class GeneticAlgorithm:
 Simple caller for GeneticAlgorithm.
 """
 # Runs the Genetic Algorithms.
-def GA(fitness, size, lowerBound, upperBound,
+def GA(fitness, size, lowerBound, upperBound, dtype = np.float64,
     mutation = 'gaussian', selection = 'tournament', crossover = 'uniform',
     **kwargs):
 
@@ -322,6 +328,7 @@ def GA(fitness, size, lowerBound, upperBound,
         size = size,
         lowerBound = lowerBound,
         upperBound = upperBound,
+        dtype = dtype,
 
         selection = selection,
         mutation = mutation,

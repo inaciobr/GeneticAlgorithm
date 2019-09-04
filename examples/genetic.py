@@ -21,10 +21,11 @@ def minimize():
         size = nVars,
         lowerBound = -30.0,
         upperBound = +30.0,
+        dtype = np.float64,
 
-        mutation = 'creep',
+        mutation = 'uniform',
         selection = 'tournament',
-        crossover = 'flat',
+        crossover = 'average',
 
         mutationBy = 'chromosome',
     )
