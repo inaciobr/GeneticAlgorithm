@@ -23,9 +23,9 @@ def minimize():
         upperBound = +30.0,
         dtype = np.float64,
 
-        mutation = 'uniform',
+        mutation = 'gaussian',
         selection = 'tournament',
-        crossover = 'average',
+        crossover = 'singlePoint',
 
         mutationBy = 'chromosome',
     )

@@ -6,15 +6,17 @@ import random
 __all__ = ['GeneticAlgorithm', 'GA']
 
 
-"""
-Genetic Algorithm used to minimize positive functions.
-"""
 class GeneticAlgorithm:
-    def __init__(self, fitness, size, lowerBound, upperBound, dtype = np.float64,
-                 mutation = 'gaussian', selection = 'tournament', crossover = 'uniform',
-                 **kwargs):
+    """
+    Optimization class that implements Genetic Algorithm,
+    which can be used to minimize positive functions.
+    """
 
-        # Function to be optimized.
+    def __init__(self, fitness, size, lowerBound, upperBound,
+                 mutation = 'gaussian', selection = 'tournament', crossover = 'uniform',
+                 dtype = np.float64, **kwargs):
+
+        # Fitness function.
         self.fitness = fitness
         self.fArgs = kwargs.get('fArgs', {})
         self.geneSize = size
@@ -25,21 +27,20 @@ class GeneticAlgorithm:
         self.upperBound = upperBound.astype(dtype) if type(upperBound) is np.ndarray \
                           else np.full(size, upperBound, dtype)
 
-        # Genetic Algorithm methods.
+        # Evolutionary methods.
         self.mutation = getattr(self, mutation + 'Mutation')
         self.selection = getattr(self, selection + 'Select')
         self.crossover = getattr(self, crossover + 'Crossover')
         self.mutationBy = getattr(self, kwargs.get('mutationBy', 'gene') + 'MutationBy')
 
-        # Generations Parameters.
+        # Evolutionary parameters.
         self.maxGenerations = kwargs.get('maxGenerations', 100 * self.geneSize)
-        self.threshold = kwargs.get('threshold', np.NINF)
-
         self.populationSize = kwargs.get('populationSize', 200)
         self.eliteSize = kwargs.get('eliteSize', self.populationSize // 20)
+        self.threshold = kwargs.get('threshold', np.NINF)
         self.crossoverSize = self.populationSize - self.eliteSize
 
-        # Method parameters.
+        # Other parameters.
         self.parameters = kwargs
 
 
@@ -47,29 +48,33 @@ class GeneticAlgorithm:
     Selection methods (one of them must be chosen).
     Returns the indexes of the selected chromosomes.
     """
-    # Tournament selection.
-    # Recommended.
+    # Tournament Selection. (Recommended)
     def tournamentSelect(self, size):
-        tournamentSize = self.parameters.get('tournamentSize', self.populationSize // 20)
-        tournament = np.random.randint(0, self.populationSize, (tournamentSize, size))
+        try:
+            tournamentShape = (self.parameters['tournamentSize'], size)
+        except KeyError:
+            self.parameters['tournamentSize'] = self.populationSize // 20
+            tournamentShape = (self.parameters['tournamentSize'], size)
+
+        tournament = np.random.randint(0, self.populationSize, tournamentShape)
         return tournament.min(axis = 0)
 
 
-    # Roulette Wheel selection.
-    def wheelSelect(self, size):
-        roulette = self.values[-1] - self.values
-        roulette /= np.add.reduce(roulette)
-        return np.random.choice(self.populationSize, size, p = roulette)
-
-
-    # Rank selection.
+    # Rank Selection.
     def rankSelect(self, size):
         rank = np.arange(self.populationSize, 0, -1)
         rank /= self.populationSize * (self.populationSize + 1) / 2
         return np.random.choice(self.populationSize, size, p = rank)
 
 
-    # Stochastic Universal selection.
+    # Roulette Wheel Selection.
+    def wheelSelect(self, size):
+        roulette = self.values[-1] - self.values
+        roulette /= np.add.reduce(roulette)
+        return np.random.choice(self.populationSize, size, p = roulette)
+
+
+    # Stochastic Universal Selection (SUS).
     def stochasticUniversalSelect(self, size):
         rule = (self.values[-1] - self.values).cumsum()
         distance = rule[-1] / size
@@ -77,25 +82,11 @@ class GeneticAlgorithm:
         return np.random.permutation(points)
 
 
-    # Stochastic Remainder selection.
-    def stochasticRemainderSelect(self, size):
-        rule = (self.values[-1] - self.values)
-        fractionalRule, intRule = np.modf(rule / rule.mean())
-
-        # Deterministic selection, based on the integer part of the relative values.
-        intRule = intRule.cumsum()
-        deterministicPoints = intRule.searchsorted(np.arange(intRule[-1]), 'right')
-
-        # Stochastic selection, proportional to the fractional part of the relative values.
-        fractionalRule /= np.add.reduce(fractionalRule)
-        randomPoints = np.random.choice(self.populationSize, int(size - intRule[-1]), p = fractionalRule)
-
-        return np.random.permutation(np.concatenate((deterministicPoints, randomPoints)))
-
-
     # No selection.
-    # Just creates a list with random chromosomes in the population.
     def noSelect(self, size):
+        """
+        Just returns a vector of random chromosomes in the population.
+        """
         return np.random.randint(0, self.populationSize, size)
 
 
