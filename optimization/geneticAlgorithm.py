@@ -48,6 +48,7 @@ class GeneticAlgorithm:
     Selection methods (one of them must be chosen).
     Returns the indexes of the selected chromosomes.
     """
+
     # Tournament Selection. (Recommended)
     def tournamentSelect(self, size):
         try:
@@ -79,7 +80,8 @@ class GeneticAlgorithm:
         rule = (self.values[-1] - self.values).cumsum()
         distance = rule[-1] / size
         points = rule.searchsorted(distance * np.arange(random.random(), size))
-        return np.random.permutation(points)
+        np.random.shuffle(points)
+        return points
 
 
     # No selection.
@@ -94,20 +96,38 @@ class GeneticAlgorithm:
     Mutation selection (one of them must be chosen).
     Returns the indexes selected genes and their position.
     """
-    # Choose random genes in the population.
-    # Each gene has 'geneMutationRate' chance to be selected.
+
+    # Gene Mutation.
     def geneMutationBy(self, shape):
-        mutationRate = self.parameters.get('geneMutationRate', 0.01)
+        """
+        Choose random genes in the population.
+        Each gene has 'geneMutationRate' chance to be selected.
+        """
+
+        try:
+            mutationRate = self.parameters['geneMutationRate']
+        except KeyError:
+            mutationRate = self.parameters['geneMutationRate'] = 0.01
+
         mask = np.random.rand(*shape) < mutationRate
         genePositions = mask.ravel().nonzero()[0] % shape[1]
 
         return mask, genePositions
 
 
-    # Each chromosome in the population has 'chromosomeMutationRate' chance to be selected.
-    # From each selected chromosome, one random gene will be chosen to be mutated.
+    # Chromosome Mutation.
     def chromosomeMutationBy(self, shape):
-        mutationRate = self.parameters.get('chromosomeMutationRate', 0.75)
+        """
+        Each chromosome in the population has 'chromosomeMutationRate' chance
+        to be selected. From each selected chromosome, one random gene will be
+        chosen to be mutated.
+        """
+
+        try:
+            mutationRate = self.parameters['chromosomeMutationRate']
+        except KeyError:
+            mutationRate = self.parameters['chromosomeMutationRate'] = 0.75
+
         chromosomes = (np.random.rand(shape[0]) < mutationRate).nonzero()[0]
         genePositions = np.random.randint(0, shape[1], chromosomes.size)
 
@@ -117,9 +137,13 @@ class GeneticAlgorithm:
     """
     Crossover methods (one of them must be chosen).
     """
+    
     # Uniform Crossover
-    # Generates two offspring from each pair of parents.
     def uniformCrossover(self):
+        """
+        Generates two offspring from each pair of parents.
+        """
+
         select = self.selection(self.crossoverSize).reshape(2, -1)
         parent1, parent2 = self.population[select]
 
@@ -129,6 +153,20 @@ class GeneticAlgorithm:
 
         # Second offspring will have the genes not selected on the first time
         return np.concatenate((np.where(mask, parent1, parent2), np.where(mask, parent2, parent1)))
+
+
+    # Discrete Crossover
+    # Works like Uniform Crossover
+    # Generates one offspring from each pair of parents.
+    def discreteCrossover(self):
+        select = self.selection(2*self.crossoverSize).reshape(2, -1)
+        parent1, parent2 = self.population[select]
+
+        # Creates a random boolean mask with the same shape as the parents
+        mask = np.unpackbits(np.frombuffer(np.random.bytes(math.ceil(parent1.size/8)), np.uint8))
+        mask = mask[:parent1.size].reshape(*parent1.shape)
+
+        return np.where(mask, parent1, parent2)
 
 
     # Single Point Crossover.
@@ -156,20 +194,6 @@ class GeneticAlgorithm:
 
         # Second offspring will have the genes not selected on the first time
         return np.concatenate((np.where(mask, parent1, parent2), np.where(mask, parent2, parent1)))
-
-
-    # Discrete Crossover
-    # Works like Uniform Crossover
-    # Generates one offspring from each pair of parents.
-    def discreteCrossover(self):
-        select = self.selection(2*self.crossoverSize).reshape(2, -1)
-        parent1, parent2 = self.population[select]
-
-        # Creates a random boolean mask with the same shape as the parents
-        mask = np.unpackbits(np.frombuffer(np.random.bytes(math.ceil(parent1.size/8)), np.uint8))
-        mask = mask[:parent1.size].reshape(*parent1.shape)
-
-        return np.where(mask, parent1, parent2)
 
 
     # Flat Crossover.
@@ -306,13 +330,13 @@ class GeneticAlgorithm:
         plt.show()
 
 
-"""
-Simple caller for GeneticAlgorithm.
-"""
 # Runs the Genetic Algorithms.
 def GA(fitness, size, lowerBound, upperBound, dtype = np.float64,
-    mutation = 'gaussian', selection = 'tournament', crossover = 'uniform',
-    **kwargs):
+       mutation = 'gaussian', selection = 'tournament', crossover = 'uniform',
+       **kwargs):
+    """
+    Simple caller for GeneticAlgorithm.
+    """
 
     GA = GeneticAlgorithm(
         fitness = fitness,

@@ -24,7 +24,7 @@ def minimize():
         dtype = np.float64,
 
         mutation = 'gaussian',
-        selection = 'tournament',
+        selection = 'stochasticUniversal',
         crossover = 'singlePoint',
 
         mutationBy = 'chromosome',
