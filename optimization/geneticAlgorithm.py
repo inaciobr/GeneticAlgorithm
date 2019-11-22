@@ -47,7 +47,17 @@ class GeneticAlgorithm:
         self.crossoverSize = self.populationSize - self.eliteSize
 
         # Other parameters.
+        self.getNormalizedValues = self.distanceToLeast
         self.parameters = kwargs
+
+
+    """
+    Normalization methods to be used when necessary.
+    """
+
+    # distanceToLeast
+    def distanceToLeast(self):
+        return self.values[self.argSort[-1]] - self.values
 
 
     """
@@ -58,37 +68,46 @@ class GeneticAlgorithm:
     # Tournament Selection. (Recommended)
     def tournamentSelect(self, size):
         try:
-            tournamentShape = (self.parameters['tournamentSize'], size)
+            tournamentSize = self.parameters['tournamentSize']
         except KeyError:
-            self.parameters['tournamentSize'] = self.populationSize // 20
-            tournamentShape = (self.parameters['tournamentSize'], size)
+            tournamentSize = self.parameters['tournamentSize'] \
+                           = self.populationSize // 20
 
-        tournament = np.random.randint(0, self.populationSize, tournamentShape)
-        return self.argSort[tournament.min(axis = 0)]
+        winners = np.random.randint(0, self.populationSize, 
+                                    (tournamentSize, size)).min(axis = 0)
+
+        return self.argSort[winners]
 
 
     # Rank Selection.
     def rankSelect(self, size):
-        rank = np.arange(self.populationSize, 0, -1.0)
-        rank /= self.populationSize * (self.populationSize + 1) / 2
+        try:
+            rank = self.rank
+        except AttributeError:
+            norm = self.populationSize * (self.populationSize + 1) / 2
+            rank = self.rank = np.arange(self.populationSize, 0, -1.0) / norm
+
         points = np.random.choice(self.populationSize, size, p = rank)
         return self.argSort[points]
 
 
     # Roulette Wheel Selection.
     def wheelSelect(self, size):
-        roulette = self.values[self.argSort[-1]] - self.values
+        roulette = self.getNormalizedValues()
         roulette /= np.add.reduce(roulette)
+
         points = np.random.choice(self.populationSize, size, p = roulette)
         return self.argSort[points]
 
 
     # Stochastic Universal Selection (SUS).
     def stochasticUniversalSelect(self, size):
-        rule = (self.values[self.argSort[-1]] - self.values).cumsum()
+        rule = self.getNormalizedValues().cumsum()
         distance = rule[-1] / size
+        
         points = rule.searchsorted(distance * np.arange(random.random(), size))
         np.random.shuffle(points)
+        
         return self.argSort[points]
 
 
@@ -238,7 +257,7 @@ class GeneticAlgorithm:
         select = self.selection(2*self.crossoverSize).reshape(2, -1)
         parent1, parent2 = self.population[select]
         
-        return parent1 + np.random.rand(*parent1.shape)*(parent2 - parent1)
+        return parent1 + (parent2 - parent1) * np.random.rand(*parent1.shape)
 
 
     # Average Crossover.
@@ -280,8 +299,8 @@ class GeneticAlgorithm:
         geneMin = self.lowerBound[genePositions]
         geneMax = self.upperBound[genePositions]
 
-        population[mask] = geneMin + \
-            (geneMax - geneMin) * np.random.rand(genePositions.size)
+        population[mask] = geneMin + (geneMax - geneMin) \
+                                     * np.random.rand(genePositions.size)
 
         return population
 
@@ -304,10 +323,10 @@ class GeneticAlgorithm:
         geneMin = self.lowerBound[genePositions]
         geneMax = self.upperBound[genePositions]
 
-        geneRange = creepFactor*(geneMax - geneMin)
+        geneRange = 2*creepFactor*(geneMax - geneMin)
 
         population[mask] = (population[mask] + 
-            geneRange*(2*np.random.rand(genePositions.size) - 1)
+            geneRange * (np.random.rand(genePositions.size) - 0.5)
         ).clip(geneMin, geneMax)
 
         return population
