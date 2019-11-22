@@ -13,8 +13,8 @@ class GeneticAlgorithm:
     """
 
     def __init__(self, fitness, size, lowerBound, upperBound,
-                 mutation = 'gaussian', selection = 'tournament', crossover = 'uniform',
-                 dtype = np.float64, **kwargs):
+                 mutation = 'gaussian', selection = 'tournament', 
+                 crossover = 'uniform', dtype = np.float64, **kwargs):
 
         # Fitness function.
         self.fitness = fitness
@@ -22,16 +22,22 @@ class GeneticAlgorithm:
         self.geneSize = size
         self.dtype = dtype
 
-        self.lowerBound = lowerBound.astype(dtype) if type(lowerBound) is np.ndarray \
-                          else np.full(size, lowerBound, dtype)
-        self.upperBound = upperBound.astype(dtype) if type(upperBound) is np.ndarray \
-                          else np.full(size, upperBound, dtype)
+        self.lowerBound = (
+            lowerBound.astype(dtype) if type(lowerBound) is np.ndarray
+            else np.full(size, lowerBound, dtype)
+        )
+
+        self.upperBound = (
+            upperBound.astype(dtype) if type(upperBound) is np.ndarray
+            else np.full(size, upperBound, dtype)
+        )
 
         # Evolutionary methods.
         self.mutation = getattr(self, mutation + 'Mutation')
         self.selection = getattr(self, selection + 'Select')
         self.crossover = getattr(self, crossover + 'Crossover')
-        self.mutationBy = getattr(self, kwargs.get('mutationBy', 'gene') + 'MutationBy')
+        self.mutationBy = getattr(self, kwargs.get('mutationBy', 'gene') 
+                                  + 'MutationBy')
 
         # Evolutionary parameters.
         self.maxGenerations = kwargs.get('maxGenerations', 100 * self.geneSize)
@@ -58,30 +64,32 @@ class GeneticAlgorithm:
             tournamentShape = (self.parameters['tournamentSize'], size)
 
         tournament = np.random.randint(0, self.populationSize, tournamentShape)
-        return tournament.min(axis = 0)
+        return self.argSort[tournament.min(axis = 0)]
 
 
     # Rank Selection.
     def rankSelect(self, size):
-        rank = np.arange(self.populationSize, 0, -1)
+        rank = np.arange(self.populationSize, 0, -1.0)
         rank /= self.populationSize * (self.populationSize + 1) / 2
-        return np.random.choice(self.populationSize, size, p = rank)
+        points = np.random.choice(self.populationSize, size, p = rank)
+        return self.argSort[points]
 
 
     # Roulette Wheel Selection.
     def wheelSelect(self, size):
-        roulette = self.values[-1] - self.values
+        roulette = self.values[self.argSort[-1]] - self.values
         roulette /= np.add.reduce(roulette)
-        return np.random.choice(self.populationSize, size, p = roulette)
+        points = np.random.choice(self.populationSize, size, p = roulette)
+        return self.argSort[points]
 
 
     # Stochastic Universal Selection (SUS).
     def stochasticUniversalSelect(self, size):
-        rule = (self.values[-1] - self.values).cumsum()
+        rule = (self.values[self.argSort[-1]] - self.values).cumsum()
         distance = rule[-1] / size
         points = rule.searchsorted(distance * np.arange(random.random(), size))
         np.random.shuffle(points)
-        return points
+        return self.argSort[points]
 
 
     # No selection.
@@ -89,6 +97,7 @@ class GeneticAlgorithm:
         """
         Just returns a vector of random chromosomes in the population.
         """
+        
         return np.random.randint(0, self.populationSize, size)
 
 
@@ -344,39 +353,35 @@ class GeneticAlgorithm:
         ).astype(self.dtype)
 
         self.values = self.fitness(self.population.T, **self.fArgs)
-        self.sortPopulation()
+        self.argSort = self.values.argsort()
 
 
     # Generates the next generation's population.
     def nextGeneration(self):
         offspring = self.mutation(self.crossover())
-        self.population[self.eliteSize:] = offspring
-        self.values[self.eliteSize:] = self.fitness(offspring.T, **self.fArgs)
-        self.sortPopulation()
 
+        nonElite = self.argSort[self.eliteSize:]
+        self.population[nonElite] = offspring
+        self.values[nonElite] = self.fitness(offspring.T, **self.fArgs)
 
-    # Sorts the population.
-    def sortPopulation(self):
-        argSort = self.values.argsort()
-        self.values = self.values[argSort]
-        self.population = self.population[argSort]
+        self.argSort = self.values.argsort()
    
-   
+
     """
     GA's execution.
     """
+
     # Runs the Generic Algorithm.
     def run(self):
         self.populate()
 
         for _ in range(self.maxGenerations):
-            if self.values[0] <= self.threshold:
+            if self.values[self.argSort[0]] <= self.threshold:
                 break
 
             self.nextGeneration()
 
-        # Returns the chromosome with best fit on the population.
-        return self.population[0], self.values[0]
+        return self.population[self.argSort[0]], self.values[self.argSort[0]]
 
 
     # Plot GA's evolution over the generations.
@@ -388,7 +393,7 @@ class GeneticAlgorithm:
 
         for i in range(self.maxGenerations):
             self.nextGeneration()
-            values[i] = self.values[0]
+            values[i] = self.values[self.argSort[0]]
 
         plt.plot(np.arange(self.maxGenerations), values)
         plt.show()
