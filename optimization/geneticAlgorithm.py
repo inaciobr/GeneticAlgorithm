@@ -148,30 +148,41 @@ class GeneticAlgorithm:
         parent1, parent2 = self.population[select]
 
         # Creates a random boolean mask with the same shape as the parents
-        mask = np.unpackbits(np.frombuffer(np.random.bytes(math.ceil(parent1.size/8)), np.uint8))
+        randomBytes = np.random.bytes(math.ceil(parent1.size / 8))
+        mask = np.unpackbits(np.frombuffer(randomBytes, np.uint8))
         mask = mask[:parent1.size].reshape(*parent1.shape)
 
         # Second offspring will have the genes not selected on the first time
-        return np.concatenate((np.where(mask, parent1, parent2), np.where(mask, parent2, parent1)))
+        gen1 = np.where(mask, parent1, parent2)
+        gen2 = np.where(mask, parent2, parent1)
+
+        return np.concatenate((gen1, gen2))
 
 
     # Discrete Crossover
-    # Works like Uniform Crossover
-    # Generates one offspring from each pair of parents.
     def discreteCrossover(self):
+        """
+        Works like Uniform Crossover, but generates only one offspring from each
+        pair of parents.
+        """
+
         select = self.selection(2*self.crossoverSize).reshape(2, -1)
         parent1, parent2 = self.population[select]
 
         # Creates a random boolean mask with the same shape as the parents
-        mask = np.unpackbits(np.frombuffer(np.random.bytes(math.ceil(parent1.size/8)), np.uint8))
+        randomBytes = np.random.bytes(math.ceil(parent1.size / 8))
+        mask = np.unpackbits(np.frombuffer(randomBytes, np.uint8))
         mask = mask[:parent1.size].reshape(*parent1.shape)
 
         return np.where(mask, parent1, parent2)
 
 
     # Single Point Crossover.
-    # Generates two offspring from each pair of parents.
     def singlePointCrossover(self):
+        """
+        Generates two offspring from each pair of parents.
+        """
+
         select = self.selection(self.crossoverSize).reshape(2, -1)
         parent1, parent2 = self.population[select]
 
@@ -179,28 +190,42 @@ class GeneticAlgorithm:
         mask = np.arange(parent1.shape[1]) < rand
 
         # Second offspring will have the genes not selected on the first time
-        return np.concatenate((np.where(mask, parent1, parent2), np.where(mask, parent2, parent1)))
+        gen1 = np.where(mask, parent1, parent2)
+        gen2 = np.where(mask, parent2, parent1)
+
+        return np.concatenate((gen1, gen2))
 
 
     # Two Point Crossover
-    # Generates two offspring from each pair of parents.
     def twoPointCrossover(self):
+        """
+        Generates two offspring from each pair of parents.
+        """
+
         select = self.selection(self.crossoverSize).reshape(2, -1)
         parent1, parent2 = self.population[select]
 
         grid = np.arange(parent1.shape[1])
-        p1, p2 = np.random.randint(0, parent1.shape[1] + 1, (2, parent1.shape[0], 1))
+        p1, p2 = np.random.randint(0, parent1.shape[1] + 1, 
+                                   (2, parent1.shape[0], 1))
         mask = (grid < p1) ^ (grid >= p2)
 
         # Second offspring will have the genes not selected on the first time
-        return np.concatenate((np.where(mask, parent1, parent2), np.where(mask, parent2, parent1)))
+        gen1 = np.where(mask, parent1, parent2)
+        gen2 = np.where(mask, parent2, parent1)
+        
+        return np.concatenate((gen1, gen2))
 
 
     # Flat Crossover.
-    # Each offspring's genes will be defined as a random number between the parents alleles.
-    # This crossover will create new genes during the iterations.
-    # Generates one offspring from each pair of parents.
     def flatCrossover(self):
+        """
+        Each offspring's genes will be defined as a random number between the 
+        parents alleles.
+        This crossover will create new genes during the iterations.
+        Generates one offspring from each pair of parents.
+        """
+
         select = self.selection(2*self.crossoverSize).reshape(2, -1)
         parent1, parent2 = self.population[select]
         
@@ -208,10 +233,14 @@ class GeneticAlgorithm:
 
 
     # Average Crossover.
-    # Each offspring's genes will be defined as the average between the parents alleles.
-    # This crossover will create new genes during the iterations.
-    # Generates one offspring from each pair of parents.
     def averageCrossover(self):
+        """
+        Each offspring's genes will be defined as the average between the 
+        parents alleles.
+        This crossover will create new genes during the iterations.
+        Generates one offspring from each pair of parents.
+        """
+
         select = self.selection(2*self.crossoverSize).reshape(2, -1)
         parent1, parent2 = self.population[select]
 
@@ -219,74 +248,101 @@ class GeneticAlgorithm:
 
 
     # No Crossover
-    # Offsprings will be a clone of the selected parents.
     def noCrossover(self):
+        """
+        Offsprings will be a clone of the selected parents.
+        """
+
         return self.population[self.selection(self.crossoverSize)]
 
 
     """
     Mutation methods (one of them must be chosen).
     """
+
     # Uniform mutation.
-    # Each selected gene will be changed to a new random value.
     def uniformMutation(self, population):
+        """
+        Each selected gene will be changed to a new random value.
+        """
+
         mask, genePositions = self.mutationBy(population.shape)
+
         geneMin = self.lowerBound[genePositions]
         geneMax = self.upperBound[genePositions]
 
-        population[mask] = geneMin + np.random.rand(genePositions.size) * (geneMax - geneMin)
+        population[mask] = geneMin + \
+            (geneMax - geneMin) * np.random.rand(genePositions.size)
+
         return population
 
 
     # Creep Mutation
-    # Each selected gene will be increased or decreased by a random value proportional to 'creepFactor.
+    # TODO: Fix clip limit
     def creepMutation(self, population):
+        """
+        Each selected gene will be increased or decreased by a random value 
+        proportional to 'creepFactor.
+        """
+
+        try:
+            creepFactor = self.parameters['creepFactor']
+        except KeyError:
+            creepFactor = self.parameters['creepFactor'] = 0.001
+
         mask, genePositions = self.mutationBy(population.shape)
+
         geneMin = self.lowerBound[genePositions]
         geneMax = self.upperBound[genePositions]
 
-        creepFactor = self.parameters.get('creepFactor', 0.001)
         geneRange = creepFactor*(geneMax - geneMin)
 
-        population[mask] = (
-            population[mask] + (2*np.random.rand(genePositions.size) - 1) * geneRange
+        population[mask] = (population[mask] + 
+            geneRange*(2*np.random.rand(genePositions.size) - 1)
         ).clip(geneMin, geneMax)
 
         return population
 
 
     # Gaussian Mutation
-    # Eache gene will be changed to a new value given by a normal distribution
-    # with mean equals the old gene value and standard deviation equals 'gaussianScale'.
+    # TODO: Fix clip limit
+    # TODO: Unit gaussian?
     def gaussianMutation(self, population):
+        """
+        Eache gene will be changed to a new value given by a normal distribution
+        with mean equals the old gene value and standard deviation equals
+        'gaussianScale'.
+        """
+
+        try:
+            gaussianScale = self.parameters['gaussianScale']
+        except KeyError:
+            gaussianScale = self.parameters['gaussianScale'] = 1.0
+
         mask, genePositions = self.mutationBy(population.shape)
+
         geneMin = self.lowerBound[genePositions]
         geneMax = self.upperBound[genePositions]
 
-        gaussianScale = self.parameters.get('gaussianScale', 1.0)
-
-        population[mask] = (
-            population[mask] + np.random.normal(scale = gaussianScale, size = genePositions.size)
+        population[mask] = (population[mask] + 
+            np.random.normal(scale = gaussianScale, size = genePositions.size)
         ).clip(geneMin, geneMax)
 
         return population
 
 
     """
-    Population and the generations related methods.
+    Population and Generations related methods.
     """
-    # Sorts the population.
-    def sortPopulation(self):
-        argSort = self.values.argsort()
-        self.values = self.values[argSort]
-        self.population = self.population[argSort]
-
 
     # Generates the first population.
     def populate(self):
+        delta = (self.upperBound - self.lowerBound)
+        
         self.population = self.lowerBound + (
-            np.random.rand(self.populationSize, self.geneSize) * (self.upperBound - self.lowerBound)
+            delta * np.random.rand(self.populationSize, self.geneSize)
         ).astype(self.dtype)
+
         self.values = self.fitness(self.population.T, **self.fArgs)
         self.sortPopulation()
 
@@ -298,6 +354,13 @@ class GeneticAlgorithm:
         self.values[self.eliteSize:] = self.fitness(offspring.T, **self.fArgs)
         self.sortPopulation()
 
+
+    # Sorts the population.
+    def sortPopulation(self):
+        argSort = self.values.argsort()
+        self.values = self.values[argSort]
+        self.population = self.population[argSort]
+   
    
     """
     GA's execution.
@@ -312,13 +375,14 @@ class GeneticAlgorithm:
 
             self.nextGeneration()
 
-        # Returns the chromosome with best fit on the population, since it's ordered.
+        # Returns the chromosome with best fit on the population.
         return self.population[0], self.values[0]
 
 
     # Plot GA's evolution over the generations.
-    def graph(self):
+    def plot(self):
         import matplotlib.pyplot as plt
+
         values = np.zeros(self.maxGenerations)
         self.populate()
 

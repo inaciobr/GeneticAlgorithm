@@ -24,7 +24,7 @@ def minimize():
         dtype = np.float64,
 
         mutation = 'gaussian',
-        selection = 'stochasticUniversal',
+        selection = 'tournament',
         crossover = 'singlePoint',
 
         mutationBy = 'chromosome',
@@ -40,6 +40,6 @@ def minimize():
 
 
 if __name__ == "__main__":
-    #print("===== Genetic Algorithm =====")
+    print("===== Genetic Algorithm =====")
     #cProfile.run("minimize()")
     minimize()
