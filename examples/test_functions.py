@@ -34,4 +34,4 @@ def rastrigin(x):
     """
     Rastrigin Function has it's global minimum at the point where x[i] = 0.
     """
-    return 10*x.shape[0] + np.add.reduce(x*x - 10*np.cos(math.tau*x))
+    return 10*len(x) + np.add.reduce(x*x - 10*np.cos(math.tau*x))
