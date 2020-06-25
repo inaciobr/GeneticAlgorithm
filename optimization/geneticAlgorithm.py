@@ -7,14 +7,13 @@ __all__ = ['GeneticAlgorithm', 'GA']
 
 
 class GeneticAlgorithm:
-    """
-    Optimization class that implements Genetic Algorithm,
-    which can be used to minimize positive functions.
+    """ Implementation of the Genetic Algorithm.
+    Can be used to minimize positive functions.
     """
 
     def __init__(self, fitness, size, lowerBound, upperBound,
-                 mutation = 'gaussian', selection = 'tournament', 
-                 crossover = 'uniform', dtype = np.float64, **kwargs):
+                 mutation='gaussian', selection='tournament',
+                 crossover='uniform', dtype=np.float64, **kwargs):
 
         # Fitness function.
         self.fitness = fitness
@@ -51,21 +50,15 @@ class GeneticAlgorithm:
         self.parameters = kwargs
 
 
-    """
-    Normalization methods to be used when necessary.
-    """
-
-    # distanceToLeast
+    # Normalization methods to be used when necessary.
     def distanceToLeast(self):
         return self.values[self.argSort[-1]] - self.values
 
 
-    """
-    Selection methods (one of them must be chosen).
-    Returns the indexes of the selected chromosomes.
-    """
+    # Selection methods (one of them must be chosen).
+    # Returns the indexes of the selected chromosomes.
 
-    # Tournament Selection. (Recommended)
+    # Recommended
     def tournamentSelect(self, size):
         try:
             tournamentSize = self.parameters['tournamentSize']
@@ -73,13 +66,12 @@ class GeneticAlgorithm:
             tournamentSize = self.parameters['tournamentSize'] \
                            = self.populationSize // 20
 
-        winners = np.random.randint(0, self.populationSize, 
-                                    (tournamentSize, size)).min(axis = 0)
+        winners = np.random.randint(0, self.populationSize,
+                                    (tournamentSize, size)).min(axis=0)
 
         return self.argSort[winners]
 
 
-    # Rank Selection.
     def rankSelect(self, size):
         try:
             rank = self.rank
@@ -91,7 +83,6 @@ class GeneticAlgorithm:
         return self.argSort[points]
 
 
-    # Roulette Wheel Selection.
     def wheelSelect(self, size):
         roulette = self.getNormalizedValues()
         roulette /= np.add.reduce(roulette)
@@ -100,7 +91,6 @@ class GeneticAlgorithm:
         return self.argSort[points]
 
 
-    # Stochastic Universal Selection (SUS).
     def stochasticUniversalSelect(self, size):
         rule = self.getNormalizedValues().cumsum()
         distance = rule[-1] / size
@@ -111,7 +101,6 @@ class GeneticAlgorithm:
         return self.argSort[points]
 
 
-    # No selection.
     def noSelect(self, size):
         """
         Just returns a vector of random chromosomes in the population.
@@ -125,7 +114,6 @@ class GeneticAlgorithm:
     Returns the indexes selected genes and their position.
     """
 
-    # Gene Mutation.
     def geneMutationBy(self, shape):
         """
         Choose random genes in the population.
@@ -143,7 +131,6 @@ class GeneticAlgorithm:
         return mask, genePositions
 
 
-    # Chromosome Mutation.
     def chromosomeMutationBy(self, shape):
         """
         Each chromosome in the population has 'chromosomeMutationRate' chance
@@ -165,8 +152,7 @@ class GeneticAlgorithm:
     """
     Crossover methods (one of them must be chosen).
     """
-    
-    # Uniform Crossover
+
     def uniformCrossover(self):
         """
         Generates two offspring from each pair of parents.
@@ -187,7 +173,6 @@ class GeneticAlgorithm:
         return np.concatenate((gen1, gen2))
 
 
-    # Discrete Crossover
     def discreteCrossover(self):
         """
         Works like Uniform Crossover, but generates only one offspring from each
@@ -205,7 +190,6 @@ class GeneticAlgorithm:
         return np.where(mask, parent1, parent2)
 
 
-    # Single Point Crossover.
     def singlePointCrossover(self):
         """
         Generates two offspring from each pair of parents.
@@ -224,7 +208,6 @@ class GeneticAlgorithm:
         return np.concatenate((gen1, gen2))
 
 
-    # Two Point Crossover
     def twoPointCrossover(self):
         """
         Generates two offspring from each pair of parents.
@@ -245,7 +228,6 @@ class GeneticAlgorithm:
         return np.concatenate((gen1, gen2))
 
 
-    # Flat Crossover.
     def flatCrossover(self):
         """
         Each offspring's genes will be defined as a random number between the 
@@ -260,7 +242,6 @@ class GeneticAlgorithm:
         return parent1 + (parent2 - parent1) * np.random.rand(*parent1.shape)
 
 
-    # Average Crossover.
     def averageCrossover(self):
         """
         Each offspring's genes will be defined as the average between the 
@@ -275,7 +256,6 @@ class GeneticAlgorithm:
         return (parent1 + parent2) / 2
 
 
-    # No Crossover
     def noCrossover(self):
         """
         Offsprings will be a clone of the selected parents.
@@ -288,7 +268,6 @@ class GeneticAlgorithm:
     Mutation methods (one of them must be chosen).
     """
 
-    # Uniform mutation.
     def uniformMutation(self, population):
         """
         Each selected gene will be changed to a new random value.
@@ -305,7 +284,6 @@ class GeneticAlgorithm:
         return population
 
 
-    # Creep Mutation
     # TODO: Fix clip limit
     def creepMutation(self, population):
         """
@@ -332,7 +310,6 @@ class GeneticAlgorithm:
         return population
 
 
-    # Gaussian Mutation
     # TODO: Fix clip limit
     # TODO: Unit gaussian?
     def gaussianMutation(self, population):
@@ -366,7 +343,7 @@ class GeneticAlgorithm:
     # Generates the first population.
     def populate(self):
         delta = (self.upperBound - self.lowerBound)
-        
+
         self.population = self.lowerBound + (
             delta * np.random.rand(self.populationSize, self.geneSize)
         ).astype(self.dtype)
@@ -390,8 +367,10 @@ class GeneticAlgorithm:
     GA's execution.
     """
 
-    # Runs the Generic Algorithm.
     def run(self):
+        """
+        Runs the Generic Algorithm.
+        """
         self.populate()
 
         for _ in range(self.maxGenerations):
@@ -402,9 +381,11 @@ class GeneticAlgorithm:
 
         return self.population[self.argSort[0]], self.values[self.argSort[0]]
 
-
-    # Plot GA's evolution over the generations.
     def plot(self):
+        """
+        Plot GA's evolution over the generations.
+        """
+
         import matplotlib.pyplot as plt
 
         values = np.zeros(self.maxGenerations)
@@ -418,24 +399,23 @@ class GeneticAlgorithm:
         plt.show()
 
 
-# Runs the Genetic Algorithms.
-def GA(fitness, size, lowerBound, upperBound, dtype = np.float64,
-       mutation = 'gaussian', selection = 'tournament', crossover = 'uniform',
+def GA(fitness, size, lowerBound, upperBound, dtype=np.float64,
+       mutation='gaussian',selection='tournament', crossover='uniform',
        **kwargs):
     """
     Simple caller for GeneticAlgorithm.
     """
 
     GA = GeneticAlgorithm(
-        fitness = fitness,
-        size = size,
-        lowerBound = lowerBound,
-        upperBound = upperBound,
-        dtype = dtype,
+        fitness=fitness,
+        size=size,
+        lowerBound=lowerBound,
+        upperBound=upperBound,
+        dtype=dtype,
 
-        selection = selection,
-        mutation = mutation,
-        crossover = crossover,
+        selection=selection,
+        mutation=mutation,
+        crossover=crossover,
         **kwargs
     )
 
