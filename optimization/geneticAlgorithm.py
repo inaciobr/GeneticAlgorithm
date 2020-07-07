@@ -7,7 +7,8 @@ __all__ = ['GeneticAlgorithm', 'GA']
 
 
 class GeneticAlgorithm:
-    """ Implementation of the Genetic Algorithm.
+    """
+    Implementation of the Genetic Algorithm.
     Can be used to minimize positive functions.
     """
 
@@ -94,10 +95,10 @@ class GeneticAlgorithm:
     def stochasticUniversalSelect(self, size):
         rule = self.getNormalizedValues().cumsum()
         distance = rule[-1] / size
-        
+
         points = rule.searchsorted(distance * np.arange(random.random(), size))
         np.random.shuffle(points)
-        
+
         return self.argSort[points]
 
 
@@ -399,23 +400,37 @@ class GeneticAlgorithm:
         plt.show()
 
 
-def GA(fitness, size, lowerBound, upperBound, dtype=np.float64,
-       mutation='gaussian',selection='tournament', crossover='uniform',
+def GA(fitness,
+       size,
+       lowerBound=np.NINF,
+       upperBound=np.inf,
+       mutation='gaussian',
+       selection='tournament',
+       crossover='uniform',
+       dtype=np.float64,
        **kwargs):
     """
     Simple caller for GeneticAlgorithm.
     """
 
     GA = GeneticAlgorithm(
+        # Function to be optimized
         fitness=fitness,
         size=size,
+
+        # Limits for the genes
         lowerBound=lowerBound,
         upperBound=upperBound,
-        dtype=dtype,
 
+        # Genetic Algorithm methods
         selection=selection,
         mutation=mutation,
         crossover=crossover,
+
+        # Data type
+        dtype=dtype,
+
+        # Other parameters
         **kwargs
     )
 

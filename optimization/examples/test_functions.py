@@ -32,6 +32,7 @@ def sphere(x):
 
 def rastrigin(x):
     """
-    Rastrigin Function has it's global minimum at the point where x[i] = 0.
+    Rastrigin Function
+    It has it's global minimum at the point where x[i] = 0.
     """
     return 10*len(x) + np.add.reduce(x*x - 10*np.cos(math.tau*x))

@@ -7,23 +7,27 @@ import numpy as np
 
 
 def minimize():
-    nDims = 100
     objFunction = test_functions.sphere
+    nDims = 100
 
     duration = -time.time()
 
     minArgs, val = GA(
+        # Function to be optimized
         fitness=objFunction,
         size=nDims,
 
+        # Limits for the genes
         lowerBound=-30.0,
         upperBound=+30.0,
 
+        # Genetic Algorithm methods
         mutation='gaussian',
         selection='tournament',
         crossover='singlePoint',
-
         mutationBy='chromosome',
+
+        # Data type
         dtype=np.float64,
     )
 
