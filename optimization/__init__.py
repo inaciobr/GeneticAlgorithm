@@ -1,1 +1,1 @@
-from .geneticAlgorithm import *
+from .core import *

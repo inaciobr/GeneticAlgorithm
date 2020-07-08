@@ -1,9 +1,9 @@
-﻿from optimization.geneticAlgorithm import GA
-from optimization.examples import test_functions
-
-import time
+﻿import time
 import numpy as np
 # import cProfile
+
+import optimization as opt
+from optimization.examples import test_functions
 
 
 def minimize():
@@ -12,7 +12,7 @@ def minimize():
 
     duration = -time.time()
 
-    minArgs, val = GA(
+    minArgs, val = opt.GA(
         # Function to be optimized
         fitness=objFunction,
         size=nDims,

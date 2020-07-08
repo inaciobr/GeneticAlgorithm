@@ -3,7 +3,7 @@ import math
 import random
 
 
-__all__ = ['GeneticAlgorithm', 'GA']
+__all__ = ['GeneticAlgorithm']
 
 
 class GeneticAlgorithm:
@@ -12,10 +12,16 @@ class GeneticAlgorithm:
     Can be used to minimize positive functions.
     """
 
-    def __init__(self, fitness, size, lowerBound, upperBound,
-                 mutation='gaussian', selection='tournament',
-                 crossover='uniform', dtype=np.float64, **kwargs):
-
+    def __init__(self,
+                 fitness,
+                 size,
+                 lowerBound,
+                 upperBound,
+                 mutation='gaussian',
+                 selection='tournament',
+                 crossover='uniform',
+                 dtype=np.float64,
+                 **kwargs):
         # Fitness function.
         self.fitness = fitness
         self.fArgs = kwargs.get('fArgs', {})
@@ -398,40 +404,3 @@ class GeneticAlgorithm:
 
         plt.plot(np.arange(self.maxGenerations), values)
         plt.show()
-
-
-def GA(fitness,
-       size,
-       lowerBound=np.NINF,
-       upperBound=np.inf,
-       mutation='gaussian',
-       selection='tournament',
-       crossover='uniform',
-       dtype=np.float64,
-       **kwargs):
-    """
-    Simple caller for GeneticAlgorithm.
-    """
-
-    GA = GeneticAlgorithm(
-        # Function to be optimized
-        fitness=fitness,
-        size=size,
-
-        # Limits for the genes
-        lowerBound=lowerBound,
-        upperBound=upperBound,
-
-        # Genetic Algorithm methods
-        selection=selection,
-        mutation=mutation,
-        crossover=crossover,
-
-        # Data type
-        dtype=dtype,
-
-        # Other parameters
-        **kwargs
-    )
-
-    return GA.run()
